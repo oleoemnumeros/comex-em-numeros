@@ -515,6 +515,73 @@ def svg_serie(B, ev, iv) -> str:
     return "".join(o)
 
 
+def svg_13(B, ev, iv) -> str:
+    """Barras dos últimos 13 meses (exportação e importação), com o mês atual e o
+    mesmo mês do ano anterior em destaque."""
+    n = min(13, len(B.meses))
+    if n < 2:
+        return ""
+    meses, e13, i13 = B.meses[-n:], ev[-n:], iv[-n:]
+    W, H, L, R, T, Bm = 360, 210, 40, 6, 20, 22
+    iw, ih = W - L - R, H - T - Bm
+    mx = max(max(e13), max(i13)) or 1
+    st = passo_bonito(mx)
+    top = st * (int(mx / st) + (0 if mx % st == 0 else 1))
+    step = iw / n
+    bw = step * 0.36
+    o = [f'<svg viewBox="0 0 {W} {H}" xmlns="http://www.w3.org/2000/svg" style="max-width:640px">']
+    g = 0.0
+    while g <= top + 1e-6:
+        y = T + ih - g / top * ih
+        o.append(f'<line x1="{L}" x2="{W - R}" y1="{y:.1f}" y2="{y:.1f}" stroke="var(--line)"/>'
+                 f'<text x="{L - 4}" y="{y + 3.5:.1f}" text-anchor="end" font-size="10">{rot_eixo(g)}</text>')
+        g += st
+    tem_e = any(e13)
+    for k, (m, e, i) in enumerate(zip(meses, e13, i13)):
+        x0 = L + k * step + step / 2
+        hi = k in (0, n - 1)
+        op = 1 if hi else 0.55
+        for v, cor, dx, nome in ((e, "var(--exp)", -bw - 0.5, "exportação"), (i, "var(--imp)", 0.5, "importação")):
+            h_ = v / top * ih
+            o.append(f'<rect x="{x0 + dx:.1f}" y="{T + ih - h_:.1f}" width="{bw:.1f}" height="{max(h_, 0):.1f}" rx="1.5" fill="{cor}" opacity="{op}">'
+                     f'<title>{mes_curto(m)}: {nome} {us(v)}</title></rect>')
+        if hi:
+            v = e if tem_e else i
+            h_ = v / top * ih
+            xr = x0 - bw / 2 - 0.5 if tem_e else x0 + bw / 2 + 0.5
+            anc = "start" if k == 0 else "end"
+            xr = max(xr - 6, L) if k == 0 else min(xr + 6, W - R)
+            o.append(f'<text x="{xr:.1f}" y="{T + ih - h_ - 5:.1f}" text-anchor="{anc}" font-size="10" style="fill:var(--ink);font-weight:700">{us_sem(v)}</text>')
+        estilo = ' style="fill:var(--ink);font-weight:700"' if hi else ""
+        o.append(f'<text x="{x0:.1f}" y="{T + ih + 14}" text-anchor="middle" font-size="9.5"{estilo}>{MES_CURTO[int(m[5:]) - 1]}</text>')
+    o.append("</svg>")
+    return "".join(o)
+
+
+def bloco_13(B, ev, iv, E0, E, I0, I, extra="") -> str:
+    """Cartão com os últimos 13 meses; sem série, cai no comparativo de dois meses."""
+    if any(ev[-13:]) or any(iv[-13:]):
+        graf = svg_13(B, ev, iv)
+        tit = "Últimos 13 meses"
+        nota = (f'<p class="src">US$ FOB por mês. Em destaque, {mes_nome(B.ant)} e {mes_nome(B.ref)}; '
+                f'o número em cima é o valor {"exportado" if any(ev[-13:]) else "importado"}.</p>')
+    else:
+        graf = svg_par(B, E0, E, I0, I)
+        tit = f"{cap(mes_nome(B.ref))} contra {mes_nome(B.ant)}"
+        nota = ""
+    return (f'<div class="card chart"><div class="row-head"><h2>{tit}</h2>{LEGENDA}</div>'
+            f'<div role="img" aria-label="Exportações e importações mês a mês">{graf}</div>{nota}{extra}</div>')
+
+
+def toneladas(kg: float) -> str:
+    t = kg / 1000
+    if t >= 1e6:
+        return f"{nf(t / 1e6, 1)} milhões de toneladas"
+    if t >= 1e3:
+        return f"{nf(t / 1e3, 1)} mil toneladas"
+    return f"{nf(t, 0)} toneladas"
+
+
 def por_ano(B, vals):
     """{ano: soma} e o último mês disponível do ano corrente."""
     out = {}
@@ -846,7 +913,7 @@ def pg_produto(B, p: dict) -> str:
     if E and ekg and E0 and ekg0:
         qv, pv = pct(ekg, ekg0), pct(E / ekg, E0 / ekg0)
         vol = (f'<p class="small">Na exportação, a quantidade embarcada variou {"+" if qv >= 0 else "−"}{nf(abs(qv), 1)}% '
-               f'({nf(ekg / 1e6, 1)} mil toneladas) e o preço médio, {"+" if pv >= 0 else "−"}{nf(abs(pv), 1)}%.</p>')
+               f'({toneladas(ekg)} no mês) e o preço médio, {"+" if pv >= 0 else "−"}{nf(abs(pv), 1)}%.</p>')
     secoes = []
     dest = B.cruz("produto_pais", "export", filtro_cod=cod)
     orig = B.cruz("produto_pais", "import", filtro_cod=cod)
@@ -866,12 +933,12 @@ def pg_produto(B, p: dict) -> str:
             f'<div class="card"><h2>De onde vem</h2><p class="small">Países de onde o Brasil mais importou em {mes_nome(B.ref)}.</p>{tabela(B, orig[:10], "pais", I)}</div>' if orig else "",
             f'<div class="card"><h2>Estados que mais importam</h2>{tabela(B, ufi[:10], "estado", I)}</div>' if ufi else ""))
     oficial = f'<p class="oficial">Nome oficial (SH4 {esc(cod)}): {esc(p["nome"])}</p>' if p["nome"] != nome else ""
-    sev, sek = B.serie_de("produtos", "export", cod)
+    sev, sek = B.serie_de("produtos", "export", cod)  # noqa: F841
     siv, _ = B.serie_de("produtos", "import", cod)
     serie_html = bloco_serie(B, sev, siv, sek, f"das exportações de {esc(minusc(nome))}")
     c = f"""<div class="card"><span class="eyebrow">Produto · SH4 {esc(cod)}</span><h1>{esc(nome)}</h1>{oficial}<p class="lede">{" ".join(frases)}</p></div>
 <div class="tiles">{tiles}</div>
-<div class="card chart"><div class="row-head"><h2>{cap(mes_nome(B.ref))} contra {mes_nome(B.ant)}</h2>{LEGENDA}</div><div role="img" aria-label="Exportações e importações nos dois meses">{svg_par(B, E0, E, I0, I)}</div>{vol}</div>
+{bloco_13(B, sev, siv, E0, E, I0, I, vol)}
 {"".join(secoes)}
 {serie_html}"""
     t = f"{cap(nome)}: exportação e importação | Comex em Números"
@@ -943,7 +1010,7 @@ def pg_lugar(B, tipo: str, it: dict) -> str:
     secoes = f'<div class="cols">{ce}{ci}</div>' if ce and ci else (ce or ci)
     c = f"""<div class="card"><span class="eyebrow">{"País" if tipo == "pais" else "Estado"}</span><h1>{esc(nome)}</h1><p class="lede">{frase}</p></div>
 <div class="tiles">{tiles}</div>
-<div class="card chart"><div class="row-head"><h2>{cap(mes_nome(B.ref))} contra {mes_nome(B.ant)}</h2>{LEGENDA}</div><div role="img" aria-label="Exportações e importações nos dois meses">{svg_par(B, E0, E, I0, I)}</div></div>
+{bloco_13(B, sev, siv, E0, E, I0, I)}
 {secoes}
 {serie_html}"""
     return pagina(B, it["url"], t, desc, c, migalha[0], migalhas=[migalha, (None, nome)])
