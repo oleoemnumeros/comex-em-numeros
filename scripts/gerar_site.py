@@ -23,6 +23,8 @@ DADOS = RAIZ / "data" / "dados.json"
 SAIDA = RAIZ / "docs"
 DOMINIO = "comexemnumeros.com.br"
 BASE = f"https://{DOMINIO}"
+# Contador de visitas (GoatCounter: sem cookies, não precisa de aviso de LGPD)
+GOAT = '<script data-goatcounter="https://comexemnumeros.goatcounter.com/count" async src="https://gc.zgo.at/count.js"></script>'
 
 MESES = ["janeiro", "fevereiro", "março", "abril", "maio", "junho", "julho",
          "agosto", "setembro", "outubro", "novembro", "dezembro"]
@@ -558,6 +560,7 @@ def pagina(B, caminho, titulo, descricao, corpo, ativo="", jsonld=None, migalhas
 <span><a href="/produtos/">Todos os produtos</a> · <a href="/paises/">Países</a> · <a href="/estados/">Estados</a> · <a href="/sobre/">Como funciona</a></span>
 </div></footer>
 <script src="/assets/app.js?v={v}" defer></script>
+{GOAT}
 </body>
 </html>
 """
@@ -844,13 +847,13 @@ def pg_embed(B) -> str:
 <link rel="stylesheet" href="/assets/estilo.css?v={v}"></head>
 <body style="background:var(--surface)"><div class="embed-page chart"><div class="row-head"><strong>Balança comercial do Brasil, últimos 13 meses</strong>{LEGENDA}</div>
 {svg_mensal(B)}
-<span class="src">US$ bilhões FOB. Exportações em {mes_nome(B.ref)}: {us(E)}{var_par(E, E0)}. Fonte: Comex Stat/MDIC · <a href="{BASE}/" target="_blank" rel="noopener">Comex em Números</a></span></div></body></html>"""
+<span class="src">US$ bilhões FOB. Exportações em {mes_nome(B.ref)}: {us(E)}{var_par(E, E0)}. Fonte: Comex Stat/MDIC · <a href="{BASE}/" target="_blank" rel="noopener">Comex em Números</a></span></div>{GOAT}</body></html>"""
 
 
 def pg_404() -> str:
     return """<!DOCTYPE html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Página não encontrada | Comex em Números</title><meta name="robots" content="noindex"><link rel="stylesheet" href="/assets/estilo.css"></head>
-<body><main><div class="card"><h1>Página não encontrada</h1><p>Este endereço não existe ou mudou. <a href="/">Voltar ao início</a> ou <a href="/produtos/">ver todos os produtos</a>.</p></div></main></body></html>"""
+<body><main><div class="card"><h1>Página não encontrada</h1><p>Este endereço não existe ou mudou. <a href="/">Voltar ao início</a> ou <a href="/produtos/">ver todos os produtos</a>.</p></div></main>""" + GOAT + "</body></html>"
 
 
 def redirect(destino: str) -> str:
