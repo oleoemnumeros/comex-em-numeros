@@ -33,6 +33,25 @@ BASE = f"https://{DOMINIO}"
 # Contador de visitas (GoatCounter: sem cookies, não precisa de aviso de LGPD)
 GOAT = '<script data-goatcounter="https://comexemnumeros.goatcounter.com/count" async src="https://gc.zgo.at/count.js"></script>'
 
+# Família em Números: para incluir um novo portal, acrescente uma linha nesta lista
+FAMILIA = [
+    ("Óleo em Números", "Petróleo e gás", "https://oleoemnumeros.com.br/", "#B45309"),
+    ("Comex em Números", "Exportações e importações", "https://comexemnumeros.com.br/", "var(--exp)"),
+]
+
+
+def familia_html(atual: str = "Comex em Números") -> str:
+    itens = []
+    for nome, tema, url, cor in FAMILIA:
+        miolo = f'<span class="ponto" style="background:{cor}"></span><span><b>{nome}</b> {tema}</span>'
+        if nome == atual:
+            itens.append(f'<li>{miolo} <em>você está aqui</em></li>')
+        else:
+            itens.append(f'<li><a href="{url}">{miolo}</a></li>')
+    return ('<div class="familia"><p><b>Família em Números</b> · portais independentes que organizam dados públicos do Brasil</p>'
+            f'<ul>{"".join(itens)}</ul></div>')
+
+
 MESES = ["janeiro", "fevereiro", "março", "abril", "maio", "junho", "julho",
          "agosto", "setembro", "outubro", "novembro", "dezembro"]
 MES_CURTO = ["jan", "fev", "mar", "abr", "mai", "jun", "jul", "ago", "set", "out", "nov", "dez"]
@@ -642,7 +661,7 @@ def pagina(B, caminho, titulo, descricao, corpo, ativo="", jsonld=None, migalhas
 <span><strong>Comex em Números</strong> · versão beta</span>
 <span>Fonte: Comex Stat, Secex/MDIC. Valores em US$ FOB. Variações sempre contra o mesmo mês do ano anterior ({mes_nome(B.ant)}). Por estado, vale a UF de origem do produto exportado ou de destino do importado.</span>
 <span><a href="/resumo/">Resumos mensais</a> · <a href="/produtos/">Todos os produtos</a> · <a href="/paises/">Países</a> · <a href="/estados/">Estados</a> · <a href="/sobre/">Como funciona</a></span>
-</div></footer>
+</div>{familia_html()}</footer>
 <script src="/assets/app.js?v={v}" defer></script>
 {GOAT}
 </body>
