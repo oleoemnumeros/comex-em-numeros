@@ -33,7 +33,7 @@ PAUSA = 4          # segundos entre chamadas
 ESPERA_429 = 12    # segundos após bloqueio por excesso de chamadas
 TENTATIVAS = 6
 UA = "ComexEmNumeros/1.0 (+https://comexemnumeros.com.br)"
-VERSAO = 3  # mude quando o formato de data/dados.json mudar: força nova coleta
+VERSAO = 4  # mude quando o formato de data/dados.json mudar: força nova coleta
 
 MESES_PT = {
     "janeiro": 1, "fevereiro": 2, "março": 3, "marco": 3, "abril": 4,
@@ -322,7 +322,11 @@ def main() -> int:
 
     # 1) Série mensal (total do Brasil), do início do ano anterior até o mês de referência
     for fluxo in ("export", "import"):
-        ls = consulta(fluxo, f"{ANO_INICIO}-01", ref, [], True, "mensal")
+        # A API trata "de/até" como faixa de anos E faixa de meses (jan-out de cada
+        # ano, por exemplo). Por isso a busca é feita ano a ano.
+        ls = []
+        for y in range(ANO_INICIO, ano + 1):
+            ls += consulta(fluxo, f"{y}-01", ref if y == ano else f"{y}-12", [], True, "mensal")
         serie: dict[str, dict] = {}
         for l in ls:
             am = mes_da_linha(l)

@@ -170,6 +170,30 @@ class Base:
             p["url"] = f"/produto/{p['codigo']}-{slug(p['curto'], 50)}/"
         self.pais = self._indice("paises", "/pais/")
         self.uf = {k: v for k, v in self._indice("estados", "/estado/").items() if v["nome"] in ARTIGO_UF}
+        # séries mensais desde 2015 (data/serie/*.json)
+        a0, m0 = 2015, 1
+        ar, mr = int(self.ref[:4]), int(self.ref[5:])
+        self.meses = [f"{y}-{m:02d}" for y in range(a0, ar + 1) for m in range(1, 13) if (y, m) <= (ar, mr)]
+        self.serie = {}
+        pasta = RAIZ / "data" / "serie"
+        for tipo in ("produtos", "paises", "estados"):
+            for fl in ("export", "import"):
+                alvo = self.serie.setdefault((tipo, fl), {})
+                for y in range(a0, ar + 1):
+                    arq = pasta / f"{tipo}_{fl}_{y}.json"
+                    if not arq.exists():
+                        continue
+                    itens = json.loads(arq.read_text(encoding="utf-8")).get("itens", {})
+                    base_i = (y - a0) * 12
+                    for chave, it in itens.items():
+                        ch = chave.replace("\xa0", " ").strip()
+                        reg = alvo.setdefault(ch, {"v": [0] * len(self.meses), "k": [0] * len(self.meses)})
+                        for j in range(12):
+                            if base_i + j < len(self.meses):
+                                reg["v"][base_i + j] += it["v"][j]
+                                if "k" in it:
+                                    reg["k"][base_i + j] += it["k"][j]
+        self.tem_serie = any(self.serie[k] for k in self.serie)
         cz = d.get("cruzado") or {}
         self.cz = {}
         for chave in ("produto_pais", "produto_estado"):
@@ -185,6 +209,16 @@ class Base:
                 it = out.setdefault(s, {"slug": s, "nome": r["nome"], "url": f"{prefixo}{s}/"})
                 it[fl] = r
         return out
+
+    def serie_de(self, tipo: str, fl: str, chave: str):
+        reg = self.serie.get((tipo, fl), {}).get(chave)
+        if not reg:
+            return [0] * len(self.meses), [0] * len(self.meses)
+        return reg["v"], reg["k"]
+
+    def serie_total(self, fl: str):
+        mapa = {r["mes"]: r["fob"] for r in self.d["mensal"][fl]}
+        return [mapa.get(m, 0) for m in self.meses]
 
     def tot(self, fl: str, m: str) -> float:
         for r in self.d["mensal"][fl]:
@@ -335,6 +369,142 @@ def svg_par(B, E0, E, I0, I) -> str:
     return "".join(o)
 
 
+def passo_bonito(mx: float) -> float:
+    if mx <= 0:
+        return 1
+    bruto = mx / 4
+    p10 = 10 ** int(f"{bruto:e}".split("e")[1])
+    for f in (1, 2, 2.5, 5, 10):
+        if bruto <= f * p10:
+            return f * p10
+    return 10 * p10
+
+
+def rot_eixo(v: float) -> str:
+    if v >= 1e9:
+        return nf(v / 1e9, 1 if v % 1e9 else 0) + " bi"
+    if v >= 1e6:
+        return nf(v / 1e6, 0) + " mi"
+    if v >= 1e3:
+        return nf(v / 1e3, 0) + " mil"
+    return nf(v, 0)
+
+
+def svg_serie(B, ev, iv) -> str:
+    n = len(B.meses)
+    if n < 2:
+        return ""
+    W, H, L, R, T, Bm = 360, 200, 40, 8, 12, 22
+    iw, ih = W - L - R, H - T - Bm
+    mx = max(max(ev), max(iv)) or 1
+    st = passo_bonito(mx)
+    top = st * (int(mx / st) + (0 if mx % st == 0 else 1))
+    def x(i):
+        return L + i / (n - 1) * iw
+    def y(v):
+        return T + ih - v / top * ih
+    o = [f'<svg viewBox="0 0 {W} {H}" xmlns="http://www.w3.org/2000/svg" style="max-width:720px">']
+    g = 0.0
+    while g <= top + 1e-6:
+        o.append(f'<line x1="{L}" x2="{W - R}" y1="{y(g):.1f}" y2="{y(g):.1f}" stroke="var(--line)"/>'
+                 f'<text x="{L - 4}" y="{y(g) + 3.5:.1f}" text-anchor="end" font-size="10">{rot_eixo(g)}</text>')
+        g += st
+    for i, m in enumerate(B.meses):
+        if m.endswith("-01") and int(m[:4]) % 2 == 1:
+            o.append(f'<line x1="{x(i):.1f}" x2="{x(i):.1f}" y1="{T + ih}" y2="{T + ih + 3}" stroke="var(--muted)"/>'
+                     f'<text x="{x(i):.1f}" y="{T + ih + 15}" text-anchor="middle" font-size="10">{m[:4]}</text>')
+    for vals, cor in ((iv, "var(--imp)"), (ev, "var(--exp)")):
+        if not any(vals):
+            continue
+        pts = " ".join(f"{x(i):.1f},{y(v):.1f}" for i, v in enumerate(vals))
+        o.append(f'<polyline points="{pts}" fill="none" stroke="{cor}" stroke-width="1.5" stroke-linejoin="round"/>'
+                 f'<circle cx="{x(n - 1):.1f}" cy="{y(vals[-1]):.1f}" r="2.6" fill="{cor}"/>')
+    o.append("</svg>")
+    return "".join(o)
+
+
+def por_ano(B, vals):
+    """{ano: soma} e o último mês disponível do ano corrente."""
+    out = {}
+    for m, v in zip(B.meses, vals):
+        out[int(m[:4])] = out.get(int(m[:4]), 0) + v
+    return out
+
+
+def ytd(B, vals, ano):
+    mr = int(B.ref[5:])
+    return sum(v for m, v in zip(B.meses, vals) if int(m[:4]) == ano and int(m[5:]) <= mr)
+
+
+def tabela_anual(B, ev, iv, ek=None, saldo=False) -> str:
+    ar = int(B.ref[:4])
+    mr = int(B.ref[5:])
+    pe, pi = por_ano(B, ev), por_ano(B, iv)
+    linhas = []
+    for ano in range(ar, 2014, -1):
+        e, i = pe.get(ano, 0), pi.get(ano, 0)
+        if ano == ar:
+            e0, i0 = ytd(B, ev, ano - 1), ytd(B, iv, ano - 1)
+            rot = f"{ano}*"
+        else:
+            e0, i0 = pe.get(ano - 1, 0), pi.get(ano - 1, 0)
+            rot = str(ano)
+        ce = chip(e, e0) if ano > 2015 else ""
+        ci = chip(i, i0) if ano > 2015 else ""
+        if saldo:
+            linhas.append(f'<tr><td>{rot}</td><td class="r">{us_sem(e)}</td><td class="r">{us_sem(i)}</td><td class="r">{us_sem(e - i)}</td></tr>')
+        else:
+            linhas.append(f'<tr><td>{rot}</td><td class="r">{us_sem(e)}<span class="s">{ce}</span></td><td class="r">{us_sem(i)}<span class="s">{ci}</span></td></tr>')
+    if saldo:
+        cab = '<th>Ano</th><th class="r">Exportação</th><th class="r">Importação</th><th class="r">Saldo</th>'
+    else:
+        cab = '<th>Ano</th><th class="r">Exportação</th><th class="r">Importação</th>'
+    nota = f'<p class="src">Valores em US$. * {ar}: janeiro a {MESES[mr - 1]}, comparado com o mesmo período de {ar - 1}.</p>'
+    t = f'<div class="scroll"><table><thead><tr>{cab}</tr></thead><tbody>{"".join(linhas)}</tbody></table></div>{nota}'
+    if ek and any(ek):
+        pk = por_ano(B, ek)
+        lv = []
+        for ano in range(ar, 2014, -1):
+            kg, val = pk.get(ano, 0), pe.get(ano, 0)
+            if not kg:
+                continue
+            lv.append(f'<tr><td>{ano}{"*" if ano == ar else ""}</td><td class="r">{nf(kg / 1e6, 1)}</td><td class="r">{nf(val / kg * 1000, 0)}</td></tr>')
+        if lv:
+            t += ('<h3>Volume e preço médio exportados</h3><div class="scroll"><table><thead><tr><th>Ano</th>'
+                  '<th class="r">Mil toneladas</th><th class="r">US$ por tonelada</th></tr></thead><tbody>' + "".join(lv) + "</tbody></table></div>")
+    return t
+
+
+def destaque_serie(B, vals, rotulo) -> str:
+    """Frase com o melhor ano completo e o acumulado do ano."""
+    ar = int(B.ref[:4])
+    pa = por_ano(B, vals)
+    completos = {a: v for a, v in pa.items() if a < ar and v > 0}
+    if not completos:
+        return ""
+    melhor = max(completos, key=completos.get)
+    atual, ant = ytd(B, vals, ar), ytd(B, vals, ar - 1)
+    txt = f"Desde 2015, o melhor ano {rotulo} foi {melhor}, com {us(completos[melhor])}."
+    if ant:
+        p = pct(atual, ant)
+        txt += (f" Em {ar}, até {MESES[int(B.ref[5:]) - 1]}, o valor soma {us(atual)}, "
+                f"{nf(abs(p), 1)}% {'acima' if p >= 0 else 'abaixo'} do mesmo período de {ar - 1}.")
+    return txt
+
+
+def bloco_serie(B, ev, iv, ek=None, rotulo="das exportações") -> str:
+    if not (any(ev) or any(iv)):
+        return ""
+    principal = ev if any(ev) else iv
+    rot = rotulo if any(ev) else rotulo.replace("exportações", "importações")
+    frase = destaque_serie(B, principal, rot)
+    return (f'<div class="card chart"><div class="row-head"><h2>Mês a mês desde 2015</h2>{LEGENDA}</div>'
+            + (f'<p>{frase}</p>' if frase else "")
+            + f'<div role="img" aria-label="Série mensal de exportações e importações desde 2015">{svg_serie(B, ev, iv)}</div>'
+            + f'<p class="src">Valores mensais em US$ FOB. Último ponto: {mes_nome(B.ref)}.</p></div>'
+            + f'<div class="card"><h2>Ano a ano</h2>{tabela_anual(B, ev, iv, ek)}</div>')
+
+
 LEGENDA = ('<div class="legend"><span><i style="background:var(--exp)"></i>Exportação</span>'
            '<span><i style="background:var(--imp)"></i>Importação</span></div>')
 
@@ -428,6 +598,14 @@ def pg_inicio(B) -> str:
                 + (f"saldo chega a {us(s)}" if s >= 0 else f"balança fica negativa em {us(-s)}"))
     acE, acI = B.d["acumulado"]["export"], B.d["acumulado"]["import"]
     ps = B.lista("produtos", "export")
+    tev, tiv = B.serie_total("export"), B.serie_total("import")
+    serie_brasil = ""
+    if sum(1 for v in tev if v) > 24:
+        frase = destaque_serie(B, tev, "das exportações brasileiras")
+        serie_brasil = (f'<div class="two"><div class="card chart"><div class="row-head"><h2>Balança desde 2015</h2>{LEGENDA}</div>'
+                        + (f"<p>{frase}</p>" if frase else "")
+                        + f'<div role="img" aria-label="Exportações e importações mensais do Brasil desde 2015">{svg_serie(B, tev, tiv)}</div></div>'
+                        + f'<div class="card"><h2>Ano a ano</h2>{tabela_anual(B, tev, tiv, saldo=True)}</div></div>')
     saldo_chip = chip(s, s0) if s0 > 0 else f'<span class="chg flat">antes {nf(s0 / 1e9, 2)}</span>'
     ac_chip = chip(acE["fob"] - acI["fob"], acE["fob_ant"] - acI["fob_ant"]) if acE["fob_ant"] > acI["fob_ant"] else ""
     c = f"""<div class="card"><span class="eyebrow">Balança comercial · {mes_nome(B.ref)}</span><h1>{esc(titulo_h)}</h1>
@@ -440,6 +618,7 @@ def pg_inicio(B) -> str:
 <tr><td>Exportações</td><td class="r">{nf(acE["fob"] / 1e9, 2)}</td><td class="r">{chip(acE["fob"], acE["fob_ant"])}</td></tr>
 <tr><td>Importações</td><td class="r">{nf(acI["fob"] / 1e9, 2)}</td><td class="r">{chip(acI["fob"], acI["fob_ant"])}</td></tr>
 <tr><td><strong>Saldo</strong></td><td class="r"><strong>{nf((acE["fob"] - acI["fob"]) / 1e9, 2)}</strong></td><td class="r">{ac_chip}</td></tr></tbody></table></div></div>
+{serie_brasil}
 <div class="two"><div class="card"><div class="row-head"><h2>O que mais puxou as exportações</h2><a class="small" href="/exportacao/">Ver todos →</a></div><p class="small">Maiores aumentos em US$ contra {mes_nome(B.ant)}.</p>{tabela(B, altas(ps, 2e7)[:5], "produto", E, "dif")}</div>
 <div class="card"><h2>Exportações por setor</h2>{hbars([r for r in B.d["setores"]["export"] if r["fob"] > 0], "var(--exp)")}</div></div>
 <div class="two"><div class="card"><div class="row-head"><h2>Principais destinos</h2><a class="small" href="/paises/">Todos os países →</a></div>{tabela(B, B.lista("paises", "export")[:6], "pais", E)}</div>
@@ -568,11 +747,14 @@ def pg_produto(B, p: dict) -> str:
         secoes.append(f'<div class="cols"><div class="card"><h2>De onde vem</h2><p class="small">Países de onde o Brasil mais importou em {mes_nome(B.ref)}.</p>{tabela(B, orig[:10], "pais", I)}</div>'
                       f'<div class="card"><h2>Estados que mais importam</h2>{tabela(B, ufi[:10], "estado", I)}</div></div>')
     oficial = f'<p class="oficial">Nome oficial (SH4 {esc(cod)}): {esc(p["nome"])}</p>' if p["nome"] != nome else ""
+    sev, sek = B.serie_de("produtos", "export", cod)
+    siv, _ = B.serie_de("produtos", "import", cod)
+    serie_html = bloco_serie(B, sev, siv, sek, f"das exportações de {esc(minusc(nome))}")
     c = f"""<div class="card"><span class="eyebrow">Produto · SH4 {esc(cod)}</span><h1>{esc(nome)}</h1>{oficial}<p class="lede">{" ".join(frases)}</p></div>
 <div class="tiles">{tiles}</div>
 <div class="card chart"><div class="row-head"><h2>{cap(mes_nome(B.ref))} contra {mes_nome(B.ant)}</h2>{LEGENDA}</div><div role="img" aria-label="Exportações e importações nos dois meses">{svg_par(B, E0, E, I0, I)}</div>{vol}</div>
 {"".join(secoes)}
-<div class="card"><h2>Em breve nesta página</h2><ul class="plain"><li>Série mensal desde 2015, em valor e em volume.</li></ul></div>"""
+{serie_html}"""
     t = f"Exportação e importação de {nome} – {mes_nome(B.ref)} | Comex em Números"
     if E or not I:
         desc = (f"O Brasil exportou {us(E)} em {minusc(nome)} em {mes_nome(B.ref)}{var_par(E, E0)}. "
@@ -624,6 +806,10 @@ def pg_lugar(B, tipo: str, it: dict) -> str:
     tiles = (tile("exp", "Exportações", us_sem(E), "US$", chip(E, E0)) + tile("imp", "Importações", us_sem(I), "US$", chip(I, I0))
              + tile("bal", "Saldo", us_sem(E - I), "US$", f'<span class="chg flat">antes {us_sem(E0 - I0)}</span>')
              + tile("", "Corrente de comércio", us_sem(E + I), "US$", chip(E + I, E0 + I0)))
+    sev, _ = B.serie_de(chave, "export", nome)
+    siv, _ = B.serie_de(chave, "import", nome)
+    rot = f"das exportações para {esc(nome)}" if tipo == "pais" else f"das exportações {de} {esc(nome)}"
+    serie_html = bloco_serie(B, sev, siv, None, rot)
     secoes = ""
     if cz_e or cz_i:
         secoes = (f'<div class="cols"><div class="card"><h2>{h_e}</h2><p class="small">Principais produtos exportados em {mes_nome(B.ref)}.</p>{tabela(B, cz_e[:15], "produto", E)}</div>'
@@ -632,7 +818,7 @@ def pg_lugar(B, tipo: str, it: dict) -> str:
 <div class="tiles">{tiles}</div>
 <div class="card chart"><div class="row-head"><h2>{cap(mes_nome(B.ref))} contra {mes_nome(B.ant)}</h2>{LEGENDA}</div><div role="img" aria-label="Exportações e importações nos dois meses">{svg_par(B, E0, E, I0, I)}</div></div>
 {secoes}
-<div class="card"><h2>Em breve nesta página</h2><ul class="plain"><li>Série mensal desde 2015.</li></ul></div>"""
+{serie_html}"""
     return pagina(B, it["url"], t, desc, c, migalha[0], migalhas=[migalha, (None, nome)])
 
 
