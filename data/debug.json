@@ -1,14 +1,2606 @@
 {
  "consultas": [
   {
-   "rotulo": "mensal",
+   "rotulo": "serie_produtos",
+   "fluxo": "export",
+   "periodo": [
+    "2015-01",
+    "2015-12"
+   ],
+   "detalhes": [
+    "heading"
+   ],
+   "n_linhas": 12856,
+   "exemplo": [
+    {
+     "year": "2015",
+     "monthNumber": "06",
+     "headingCode": "1201",
+     "heading": "Soja, mesmo triturada",
+     "metricFOB": "3762210842",
+     "metricKG": "9810092292"
+    },
+    {
+     "year": "2015",
+     "monthNumber": "05",
+     "headingCode": "1201",
+     "heading": "Soja, mesmo triturada",
+     "metricFOB": "3612716728",
+     "metricKG": "9341009332"
+    },
+    {
+     "year": "2015",
+     "monthNumber": "07",
+     "headingCode": "1201",
+     "heading": "Soja, mesmo triturada",
+     "metricFOB": "3224052598",
+     "metricKG": "8440388069"
+    }
+   ]
+  },
+  {
+   "rotulo": "serie_produtos",
+   "fluxo": "export",
+   "periodo": [
+    "2016-01",
+    "2016-12"
+   ],
+   "detalhes": [
+    "heading"
+   ],
+   "n_linhas": 12922,
+   "exemplo": [
+    {
+     "year": "2016",
+     "monthNumber": "05",
+     "headingCode": "1201",
+     "heading": "Soja, mesmo triturada",
+     "metricFOB": "3600309132",
+     "metricKG": "9915098848"
+    },
+    {
+     "year": "2016",
+     "monthNumber": "04",
+     "headingCode": "1201",
+     "heading": "Soja, mesmo triturada",
+     "metricFOB": "3532371105",
+     "metricKG": "10085881032"
+    },
+    {
+     "year": "2016",
+     "monthNumber": "06",
+     "headingCode": "1201",
+     "heading": "Soja, mesmo triturada",
+     "metricFOB": "2971369089",
+     "metricKG": "7761036427"
+    }
+   ]
+  },
+  {
+   "rotulo": "serie_produtos",
+   "fluxo": "export",
+   "periodo": [
+    "2017-01",
+    "2017-12"
+   ],
+   "detalhes": [
+    "heading"
+   ],
+   "n_linhas": 12883,
+   "exemplo": [
+    {
+     "year": "2017",
+     "monthNumber": "05",
+     "headingCode": "1201",
+     "heading": "Soja, mesmo triturada",
+     "metricFOB": "4063422621",
+     "metricKG": "10959858431"
+    },
+    {
+     "year": "2017",
+     "monthNumber": "04",
+     "headingCode": "1201",
+     "heading": "Soja, mesmo triturada",
+     "metricFOB": "3948237434",
+     "metricKG": "10432129072"
+    },
+    {
+     "year": "2017",
+     "monthNumber": "03",
+     "headingCode": "1201",
+     "heading": "Soja, mesmo triturada",
+     "metricFOB": "3534057617",
+     "metricKG": "8979127442"
+    }
+   ]
+  },
+  {
+   "rotulo": "serie_produtos",
+   "fluxo": "export",
+   "periodo": [
+    "2018-01",
+    "2018-12"
+   ],
+   "detalhes": [
+    "heading"
+   ],
+   "n_linhas": 12958,
+   "exemplo": [
+    {
+     "year": "2018",
+     "monthNumber": "05",
+     "headingCode": "1201",
+     "heading": "Soja, mesmo triturada",
+     "metricFOB": "4998529250",
+     "metricKG": "12353479438"
+    },
+    {
+     "year": "2018",
+     "monthNumber": "06",
+     "headingCode": "1201",
+     "heading": "Soja, mesmo triturada",
+     "metricFOB": "4199194498",
+     "metricKG": "10420130276"
+    },
+    {
+     "year": "2018",
+     "monthNumber": "04",
+     "headingCode": "1201",
+     "heading": "Soja, mesmo triturada",
+     "metricFOB": "4112601510",
+     "metricKG": "10258699614"
+    }
+   ]
+  },
+  {
+   "rotulo": "serie_produtos",
+   "fluxo": "export",
+   "periodo": [
+    "2019-01",
+    "2019-12"
+   ],
+   "detalhes": [
+    "heading"
+   ],
+   "n_linhas": 13211,
+   "exemplo": [
+    {
+     "year": "2019",
+     "monthNumber": "05",
+     "headingCode": "1201",
+     "heading": "Soja, mesmo triturada",
+     "metricFOB": "3403863079",
+     "metricKG": "10011988762"
+    },
+    {
+     "year": "2019",
+     "monthNumber": "04",
+     "headingCode": "1201",
+     "heading": "Soja, mesmo triturada",
+     "metricFOB": "3303997489",
+     "metricKG": "9403698000"
+    },
+    {
+     "year": "2019",
+     "monthNumber": "12",
+     "headingCode": "2709",
+     "heading": "Óleos brutos de petróleo ou de minerais betuminosos",
+     "metricFOB": "3203100988",
+     "metricKG": "8539668449"
+    }
+   ]
+  },
+  {
+   "rotulo": "serie_produtos",
+   "fluxo": "export",
+   "periodo": [
+    "2020-01",
+    "2020-12"
+   ],
+   "detalhes": [
+    "heading"
+   ],
+   "n_linhas": 13121,
+   "exemplo": [
+    {
+     "year": "2020",
+     "monthNumber": "04",
+     "headingCode": "1201",
+     "heading": "Soja, mesmo triturada",
+     "metricFOB": "5030997690",
+     "metricKG": "14854934104"
+    },
+    {
+     "year": "2020",
+     "monthNumber": "05",
+     "headingCode": "1201",
+     "heading": "Soja, mesmo triturada",
+     "metricFOB": "4700002060",
+     "metricKG": "14108152631"
+    },
+    {
+     "year": "2020",
+     "monthNumber": "06",
+     "headingCode": "1201",
+     "heading": "Soja, mesmo triturada",
+     "metricFOB": "4295970050",
+     "metricKG": "12741608347"
+    }
+   ]
+  },
+  {
+   "rotulo": "serie_produtos",
+   "fluxo": "export",
+   "periodo": [
+    "2021-01",
+    "2021-12"
+   ],
+   "detalhes": [
+    "heading"
+   ],
+   "n_linhas": 13320,
+   "exemplo": [
+    {
+     "year": "2021",
+     "monthNumber": "05",
+     "headingCode": "1201",
+     "heading": "Soja, mesmo triturada",
+     "metricFOB": "6707871572",
+     "metricKG": "14966212564"
+    },
+    {
+     "year": "2021",
+     "monthNumber": "04",
+     "headingCode": "1201",
+     "heading": "Soja, mesmo triturada",
+     "metricFOB": "6665535984",
+     "metricKG": "16114936472"
+    },
+    {
+     "year": "2021",
+     "monthNumber": "08",
+     "headingCode": "2601",
+     "heading": "Minérios de ferro e seus concentrados, incluídas as pirites de ferro ustuladas (cinzas de pirites)",
+     "metricFOB": "5612825309",
+     "metricKG": "34683354114"
+    }
+   ]
+  },
+  {
+   "rotulo": "serie_produtos",
+   "fluxo": "export",
+   "periodo": [
+    "2022-01",
+    "2022-12"
+   ],
+   "detalhes": [
+    "heading"
+   ],
+   "n_linhas": 13385,
+   "exemplo": [
+    {
+     "year": "2022",
+     "monthNumber": "04",
+     "headingCode": "1201",
+     "heading": "Soja, mesmo triturada",
+     "metricFOB": "6757748276",
+     "metricKG": "11472577118"
+    },
+    {
+     "year": "2022",
+     "monthNumber": "05",
+     "headingCode": "1201",
+     "heading": "Soja, mesmo triturada",
+     "metricFOB": "6614105349",
+     "metricKG": "10640470601"
+    },
+    {
+     "year": "2022",
+     "monthNumber": "03",
+     "headingCode": "1201",
+     "heading": "Soja, mesmo triturada",
+     "metricFOB": "6463669703",
+     "metricKG": "12190885395"
+    }
+   ]
+  },
+  {
+   "rotulo": "serie_produtos",
+   "fluxo": "export",
+   "periodo": [
+    "2023-01",
+    "2023-12"
+   ],
+   "detalhes": [
+    "heading"
+   ],
+   "n_linhas": 13456,
+   "exemplo": [
+    {
+     "year": "2023",
+     "monthNumber": "05",
+     "headingCode": "1201",
+     "heading": "Soja, mesmo triturada",
+     "metricFOB": "8115628761",
+     "metricKG": "15584238723"
+    },
+    {
+     "year": "2023",
+     "monthNumber": "04",
+     "headingCode": "1201",
+     "heading": "Soja, mesmo triturada",
+     "metricFOB": "7749793839",
+     "metricKG": "14336464478"
+    },
+    {
+     "year": "2023",
+     "monthNumber": "03",
+     "headingCode": "1201",
+     "heading": "Soja, mesmo triturada",
+     "metricFOB": "7361533614",
+     "metricKG": "13241396236"
+    }
+   ]
+  },
+  {
+   "rotulo": "serie_produtos",
+   "fluxo": "export",
+   "periodo": [
+    "2024-01",
+    "2024-12"
+   ],
+   "detalhes": [
+    "heading"
+   ],
+   "n_linhas": 13395,
+   "exemplo": [
+    {
+     "year": "2024",
+     "monthNumber": "04",
+     "headingCode": "1201",
+     "heading": "Soja, mesmo triturada",
+     "metricFOB": "6286351261",
+     "metricKG": "14687842087"
+    },
+    {
+     "year": "2024",
+     "monthNumber": "06",
+     "headingCode": "1201",
+     "heading": "Soja, mesmo triturada",
+     "metricFOB": "6137462565",
+     "metricKG": "13959612086"
+    },
+    {
+     "year": "2024",
+     "monthNumber": "05",
+     "headingCode": "1201",
+     "heading": "Soja, mesmo triturada",
+     "metricFOB": "5751861344",
+     "metricKG": "13436722311"
+    }
+   ]
+  },
+  {
+   "rotulo": "serie_produtos",
    "fluxo": "export",
    "periodo": [
     "2025-01",
+    "2025-12"
+   ],
+   "detalhes": [
+    "heading"
+   ],
+   "n_linhas": 13492,
+   "exemplo": [
+    {
+     "year": "2025",
+     "monthNumber": "04",
+     "headingCode": "1201",
+     "heading": "Soja, mesmo triturada",
+     "metricFOB": "5864208436",
+     "metricKG": "15271913818"
+    },
+    {
+     "year": "2025",
+     "monthNumber": "03",
+     "headingCode": "1201",
+     "heading": "Soja, mesmo triturada",
+     "metricFOB": "5673615163",
+     "metricKG": "14657780804"
+    },
+    {
+     "year": "2025",
+     "monthNumber": "05",
+     "headingCode": "1201",
+     "heading": "Soja, mesmo triturada",
+     "metricFOB": "5501158271",
+     "metricKG": "14099744725"
+    }
+   ]
+  },
+  {
+   "rotulo": "serie_produtos",
+   "fluxo": "export",
+   "periodo": [
+    "2026-01",
+    "2026-10"
+   ],
+   "detalhes": [
+    "heading"
+   ],
+   "n_linhas": 11199,
+   "exemplo": [
+    {
+     "year": "2026",
+     "monthNumber": "10",
+     "headingCode": "2709",
+     "heading": "Óleos brutos de petróleo ou de minerais betuminosos",
+     "metricFOB": "8538614829",
+     "metricKG": "14489695396"
+    },
+    {
+     "year": "2026",
+     "monthNumber": "04",
+     "headingCode": "1201",
+     "heading": "Soja, mesmo triturada",
+     "metricFOB": "6962355316",
+     "metricKG": "16750088466"
+    },
+    {
+     "year": "2026",
+     "monthNumber": "09",
+     "headingCode": "2709",
+     "heading": "Óleos brutos de petróleo ou de minerais betuminosos",
+     "metricFOB": "6517719944",
+     "metricKG": "11707433796"
+    }
+   ]
+  },
+  {
+   "rotulo": "serie_produtos",
+   "fluxo": "import",
+   "periodo": [
+    "2015-01",
+    "2015-12"
+   ],
+   "detalhes": [
+    "heading"
+   ],
+   "n_linhas": 13554,
+   "exemplo": [
+    {
+     "year": "2015",
+     "monthNumber": "10",
+     "headingCode": "2709",
+     "heading": "Óleos brutos de petróleo ou de minerais betuminosos",
+     "metricFOB": "1344407129",
+     "metricKG": "2774528541"
+    },
+    {
+     "year": "2015",
+     "monthNumber": "02",
+     "headingCode": "2710",
+     "heading": "Óleos de petróleo ou de minerais betuminosos, exceto óleos brutos; preparações não especificadas nem compreendidas noutras posições, contendo, em peso, 70 % ou mais de óleos de petróleo ou de minerais betuminosos, os quais devem constituir o seu elemento",
+     "metricFOB": "1161777180",
+     "metricKG": "1789551436"
+    },
+    {
+     "year": "2015",
+     "monthNumber": "01",
+     "headingCode": "2710",
+     "heading": "Óleos de petróleo ou de minerais betuminosos, exceto óleos brutos; preparações não especificadas nem compreendidas noutras posições, contendo, em peso, 70 % ou mais de óleos de petróleo ou de minerais betuminosos, os quais devem constituir o seu elemento",
+     "metricFOB": "1088675422",
+     "metricKG": "1439929942"
+    }
+   ]
+  },
+  {
+   "rotulo": "serie_produtos",
+   "fluxo": "import",
+   "periodo": [
+    "2016-01",
+    "2016-12"
+   ],
+   "detalhes": [
+    "heading"
+   ],
+   "n_linhas": 13505,
+   "exemplo": [
+    {
+     "year": "2016",
+     "monthNumber": "07",
+     "headingCode": "2710",
+     "heading": "Óleos de petróleo ou de minerais betuminosos, exceto óleos brutos; preparações não especificadas nem compreendidas noutras posições, contendo, em peso, 70 % ou mais de óleos de petróleo ou de minerais betuminosos, os quais devem constituir o seu elemento",
+     "metricFOB": "872280545",
+     "metricKG": "2065752664"
+    },
+    {
+     "year": "2016",
+     "monthNumber": "08",
+     "headingCode": "2710",
+     "heading": "Óleos de petróleo ou de minerais betuminosos, exceto óleos brutos; preparações não especificadas nem compreendidas noutras posições, contendo, em peso, 70 % ou mais de óleos de petróleo ou de minerais betuminosos, os quais devem constituir o seu elemento",
+     "metricFOB": "829496893",
+     "metricKG": "1878412437"
+    },
+    {
+     "year": "2016",
+     "monthNumber": "02",
+     "headingCode": "2710",
+     "heading": "Óleos de petróleo ou de minerais betuminosos, exceto óleos brutos; preparações não especificadas nem compreendidas noutras posições, contendo, em peso, 70 % ou mais de óleos de petróleo ou de minerais betuminosos, os quais devem constituir o seu elemento",
+     "metricFOB": "693910563",
+     "metricKG": "1517044582"
+    }
+   ]
+  },
+  {
+   "rotulo": "serie_produtos",
+   "fluxo": "import",
+   "periodo": [
+    "2017-01",
+    "2017-12"
+   ],
+   "detalhes": [
+    "heading"
+   ],
+   "n_linhas": 13546,
+   "exemplo": [
+    {
+     "year": "2017",
+     "monthNumber": "10",
+     "headingCode": "2710",
+     "heading": "Óleos de petróleo ou de minerais betuminosos, exceto óleos brutos; preparações não especificadas nem compreendidas noutras posições, contendo, em peso, 70 % ou mais de óleos de petróleo ou de minerais betuminosos, os quais devem constituir o seu elemento",
+     "metricFOB": "1230943422",
+     "metricKG": "2326375130"
+    },
+    {
+     "year": "2017",
+     "monthNumber": "12",
+     "headingCode": "2710",
+     "heading": "Óleos de petróleo ou de minerais betuminosos, exceto óleos brutos; preparações não especificadas nem compreendidas noutras posições, contendo, em peso, 70 % ou mais de óleos de petróleo ou de minerais betuminosos, os quais devem constituir o seu elemento",
+     "metricFOB": "1203213309",
+     "metricKG": "2117752519"
+    },
+    {
+     "year": "2017",
+     "monthNumber": "02",
+     "headingCode": "2710",
+     "heading": "Óleos de petróleo ou de minerais betuminosos, exceto óleos brutos; preparações não especificadas nem compreendidas noutras posições, contendo, em peso, 70 % ou mais de óleos de petróleo ou de minerais betuminosos, os quais devem constituir o seu elemento",
+     "metricFOB": "1183611329",
+     "metricKG": "2446305333"
+    }
+   ]
+  },
+  {
+   "rotulo": "serie_produtos",
+   "fluxo": "import",
+   "periodo": [
+    "2018-01",
+    "2018-12"
+   ],
+   "detalhes": [
+    "heading"
+   ],
+   "n_linhas": 13525,
+   "exemplo": [
+    {
+     "year": "2018",
+     "monthNumber": "08",
+     "headingCode": "8905",
+     "heading": "Barcos-faróis, barcos-bombas, dragas, guindastes flutuantes e outras embarcações em que a navegação é acessória da função principal; docas flutuantes; plataformas de perfuração ou de exploração, flutuantes ou submersíveis",
+     "metricFOB": "2071124563",
+     "metricKG": "101748000"
+    },
+    {
+     "year": "2018",
+     "monthNumber": "07",
+     "headingCode": "8905",
+     "heading": "Barcos-faróis, barcos-bombas, dragas, guindastes flutuantes e outras embarcações em que a navegação é acessória da função principal; docas flutuantes; plataformas de perfuração ou de exploração, flutuantes ou submersíveis",
+     "metricFOB": "1615772555",
+     "metricKG": "79596590"
+    },
+    {
+     "year": "2018",
+     "monthNumber": "12",
+     "headingCode": "2710",
+     "heading": "Óleos de petróleo ou de minerais betuminosos, exceto óleos brutos; preparações não especificadas nem compreendidas noutras posições, contendo, em peso, 70 % ou mais de óleos de petróleo ou de minerais betuminosos, os quais devem constituir o seu elemento",
+     "metricFOB": "1567086765",
+     "metricKG": "2355009337"
+    }
+   ]
+  },
+  {
+   "rotulo": "serie_produtos",
+   "fluxo": "import",
+   "periodo": [
+    "2019-01",
+    "2019-12"
+   ],
+   "detalhes": [
+    "heading"
+   ],
+   "n_linhas": 13554,
+   "exemplo": [
+    {
+     "year": "2019",
+     "monthNumber": "01",
+     "headingCode": "8905",
+     "heading": "Barcos-faróis, barcos-bombas, dragas, guindastes flutuantes e outras embarcações em que a navegação é acessória da função principal; docas flutuantes; plataformas de perfuração ou de exploração, flutuantes ou submersíveis",
+     "metricFOB": "2085172134",
+     "metricKG": "101748010"
+    },
+    {
+     "year": "2019",
+     "monthNumber": "07",
+     "headingCode": "2710",
+     "heading": "Óleos de petróleo ou de minerais betuminosos, exceto óleos brutos; preparações não especificadas nem compreendidas noutras posições, contendo, em peso, 70 % ou mais de óleos de petróleo ou de minerais betuminosos, os quais devem constituir o seu elemento",
+     "metricFOB": "1558326959",
+     "metricKG": "2628198764"
+    },
+    {
+     "year": "2019",
+     "monthNumber": "11",
+     "headingCode": "2710",
+     "heading": "Óleos de petróleo ou de minerais betuminosos, exceto óleos brutos; preparações não especificadas nem compreendidas noutras posições, contendo, em peso, 70 % ou mais de óleos de petróleo ou de minerais betuminosos, os quais devem constituir o seu elemento",
+     "metricFOB": "1532959236",
+     "metricKG": "2606214213"
+    }
+   ]
+  },
+  {
+   "rotulo": "serie_produtos",
+   "fluxo": "import",
+   "periodo": [
+    "2020-01",
+    "2020-12"
+   ],
+   "detalhes": [
+    "heading"
+   ],
+   "n_linhas": 13432,
+   "exemplo": [
+    {
+     "year": "2020",
+     "monthNumber": "01",
+     "headingCode": "8905",
+     "heading": "Barcos-faróis, barcos-bombas, dragas, guindastes flutuantes e outras embarcações em que a navegação é acessória da função principal; docas flutuantes; plataformas de perfuração ou de exploração, flutuantes ou submersíveis",
+     "metricFOB": "2082036085",
+     "metricKG": "111490240"
+    },
+    {
+     "year": "2020",
+     "monthNumber": "12",
+     "headingCode": "8905",
+     "heading": "Barcos-faróis, barcos-bombas, dragas, guindastes flutuantes e outras embarcações em que a navegação é acessória da função principal; docas flutuantes; plataformas de perfuração ou de exploração, flutuantes ou submersíveis",
+     "metricFOB": "1298836161",
+     "metricKG": "302424943"
+    },
+    {
+     "year": "2020",
+     "monthNumber": "02",
+     "headingCode": "8430",
+     "heading": "Outras máquinas e aparelhos de terraplanagem, nivelamento, raspagem, escavação, compactação, extracção ou perfuração da terra, de minerais ou minérios; bate-estacas e arranca-estacas; limpa-neves",
+     "metricFOB": "1193012943",
+     "metricKG": "28367150"
+    }
+   ]
+  },
+  {
+   "rotulo": "serie_produtos",
+   "fluxo": "import",
+   "periodo": [
+    "2021-01",
+    "2021-12"
+   ],
+   "detalhes": [
+    "heading"
+   ],
+   "n_linhas": 13514,
+   "exemplo": [
+    {
+     "year": "2021",
+     "monthNumber": "10",
+     "headingCode": "2710",
+     "heading": "Óleos de petróleo ou de minerais betuminosos, exceto óleos brutos; preparações não especificadas nem compreendidas noutras posições, contendo, em peso, 70 % ou mais de óleos de petróleo ou de minerais betuminosos, os quais devem constituir o seu elemento",
+     "metricFOB": "1828176432",
+     "metricKG": "2718872674"
+    },
+    {
+     "year": "2021",
+     "monthNumber": "08",
+     "headingCode": "2710",
+     "heading": "Óleos de petróleo ou de minerais betuminosos, exceto óleos brutos; preparações não especificadas nem compreendidas noutras posições, contendo, em peso, 70 % ou mais de óleos de petróleo ou de minerais betuminosos, os quais devem constituir o seu elemento",
+     "metricFOB": "1547258186",
+     "metricKG": "2478758356"
+    },
+    {
+     "year": "2021",
+     "monthNumber": "11",
+     "headingCode": "2710",
+     "heading": "Óleos de petróleo ou de minerais betuminosos, exceto óleos brutos; preparações não especificadas nem compreendidas noutras posições, contendo, em peso, 70 % ou mais de óleos de petróleo ou de minerais betuminosos, os quais devem constituir o seu elemento",
+     "metricFOB": "1387547779",
+     "metricKG": "1891779239"
+    }
+   ]
+  },
+  {
+   "rotulo": "serie_produtos",
+   "fluxo": "import",
+   "periodo": [
+    "2022-01",
+    "2022-12"
+   ],
+   "detalhes": [
+    "heading"
+   ],
+   "n_linhas": 13597,
+   "exemplo": [
+    {
+     "year": "2022",
+     "monthNumber": "08",
+     "headingCode": "2710",
+     "heading": "Óleos de petróleo ou de minerais betuminosos, exceto óleos brutos; preparações não especificadas nem compreendidas noutras posições, contendo, em peso, 70 % ou mais de óleos de petróleo ou de minerais betuminosos, os quais devem constituir o seu elemento",
+     "metricFOB": "2697932137",
+     "metricKG": "2597027294"
+    },
+    {
+     "year": "2022",
+     "monthNumber": "09",
+     "headingCode": "2710",
+     "heading": "Óleos de petróleo ou de minerais betuminosos, exceto óleos brutos; preparações não especificadas nem compreendidas noutras posições, contendo, em peso, 70 % ou mais de óleos de petróleo ou de minerais betuminosos, os quais devem constituir o seu elemento",
+     "metricFOB": "2653907023",
+     "metricKG": "2670021598"
+    },
+    {
+     "year": "2022",
+     "monthNumber": "05",
+     "headingCode": "2710",
+     "heading": "Óleos de petróleo ou de minerais betuminosos, exceto óleos brutos; preparações não especificadas nem compreendidas noutras posições, contendo, em peso, 70 % ou mais de óleos de petróleo ou de minerais betuminosos, os quais devem constituir o seu elemento",
+     "metricFOB": "2546715457",
+     "metricKG": "2442103589"
+    }
+   ]
+  },
+  {
+   "rotulo": "serie_produtos",
+   "fluxo": "import",
+   "periodo": [
+    "2023-01",
+    "2023-12"
+   ],
+   "detalhes": [
+    "heading"
+   ],
+   "n_linhas": 13620,
+   "exemplo": [
+    {
+     "year": "2023",
+     "monthNumber": "03",
+     "headingCode": "2710",
+     "heading": "Óleos de petróleo ou de minerais betuminosos, exceto óleos brutos; preparações não especificadas nem compreendidas noutras posições, contendo, em peso, 70 % ou mais de óleos de petróleo ou de minerais betuminosos, os quais devem constituir o seu elemento",
+     "metricFOB": "1902819584",
+     "metricKG": "2369423518"
+    },
+    {
+     "year": "2023",
+     "monthNumber": "12",
+     "headingCode": "2710",
+     "heading": "Óleos de petróleo ou de minerais betuminosos, exceto óleos brutos; preparações não especificadas nem compreendidas noutras posições, contendo, em peso, 70 % ou mais de óleos de petróleo ou de minerais betuminosos, os quais devem constituir o seu elemento",
+     "metricFOB": "1792759207",
+     "metricKG": "2363822677"
+    },
+    {
+     "year": "2023",
+     "monthNumber": "02",
+     "headingCode": "2710",
+     "heading": "Óleos de petróleo ou de minerais betuminosos, exceto óleos brutos; preparações não especificadas nem compreendidas noutras posições, contendo, em peso, 70 % ou mais de óleos de petróleo ou de minerais betuminosos, os quais devem constituir o seu elemento",
+     "metricFOB": "1621768921",
+     "metricKG": "1937666093"
+    }
+   ]
+  },
+  {
+   "rotulo": "serie_produtos",
+   "fluxo": "import",
+   "periodo": [
+    "2024-01",
+    "2024-12"
+   ],
+   "detalhes": [
+    "heading"
+   ],
+   "n_linhas": 13642,
+   "exemplo": [
+    {
+     "year": "2024",
+     "monthNumber": "06",
+     "headingCode": "8703",
+     "heading": "Automóveis de passageiros e outros veículos automóveis principalmente concebidos para o transporte de pessoas (exceto os da posição 8702), incluídos os veículos de uso misto (station wagons) e os automóveis de corrida",
+     "metricFOB": "1984998932",
+     "metricKG": "149669935"
+    },
+    {
+     "year": "2024",
+     "monthNumber": "03",
+     "headingCode": "2710",
+     "heading": "Óleos de petróleo ou de minerais betuminosos, exceto óleos brutos; preparações não especificadas nem compreendidas noutras posições, contendo, em peso, 70 % ou mais de óleos de petróleo ou de minerais betuminosos, os quais devem constituir o seu elemento",
+     "metricFOB": "1568794308",
+     "metricKG": "1945206977"
+    },
+    {
+     "year": "2024",
+     "monthNumber": "08",
+     "headingCode": "2710",
+     "heading": "Óleos de petróleo ou de minerais betuminosos, exceto óleos brutos; preparações não especificadas nem compreendidas noutras posições, contendo, em peso, 70 % ou mais de óleos de petróleo ou de minerais betuminosos, os quais devem constituir o seu elemento",
+     "metricFOB": "1466510143",
+     "metricKG": "2038911454"
+    }
+   ]
+  },
+  {
+   "rotulo": "serie_produtos",
+   "fluxo": "import",
+   "periodo": [
+    "2025-01",
+    "2025-12"
+   ],
+   "detalhes": [
+    "heading"
+   ],
+   "n_linhas": 13675,
+   "exemplo": [
+    {
+     "year": "2025",
+     "monthNumber": "02",
+     "headingCode": "8905",
+     "heading": "Barcos-faróis, barcos-bombas, dragas, guindastes flutuantes e outras embarcações em que a navegação é acessória da função principal; docas flutuantes; plataformas de perfuração ou de exploração, flutuantes ou submersíveis",
+     "metricFOB": "2661061089",
+     "metricKG": "132951872"
+    },
+    {
+     "year": "2025",
+     "monthNumber": "09",
+     "headingCode": "8905",
+     "heading": "Barcos-faróis, barcos-bombas, dragas, guindastes flutuantes e outras embarcações em que a navegação é acessória da função principal; docas flutuantes; plataformas de perfuração ou de exploração, flutuantes ou submersíveis",
+     "metricFOB": "2356843523",
+     "metricKG": "141084000"
+    },
+    {
+     "year": "2025",
+     "monthNumber": "07",
+     "headingCode": "2710",
+     "heading": "Óleos de petróleo ou de minerais betuminosos, exceto óleos brutos; preparações não especificadas nem compreendidas noutras posições, contendo, em peso, 70 % ou mais de óleos de petróleo ou de minerais betuminosos, os quais devem constituir o seu elemento",
+     "metricFOB": "1588247745",
+     "metricKG": "2314559690"
+    }
+   ]
+  },
+  {
+   "rotulo": "serie_produtos",
+   "fluxo": "import",
+   "periodo": [
+    "2026-01",
+    "2026-10"
+   ],
+   "detalhes": [
+    "heading"
+   ],
+   "n_linhas": 11404,
+   "exemplo": [
+    {
+     "year": "2026",
+     "monthNumber": "10",
+     "headingCode": "2710",
+     "heading": "Óleos de petróleo ou de minerais betuminosos, exceto óleos brutos; preparações não especificadas nem compreendidas noutras posições, contendo, em peso, 70 % ou mais de óleos de petróleo ou de minerais betuminosos, os quais devem constituir o seu elemento",
+     "metricFOB": "3054619028",
+     "metricKG": "2288277954"
+    },
+    {
+     "year": "2026",
+     "monthNumber": "02",
+     "headingCode": "8905",
+     "heading": "Barcos-faróis, barcos-bombas, dragas, guindastes flutuantes e outras embarcações em que a navegação é acessória da função principal; docas flutuantes; plataformas de perfuração ou de exploração, flutuantes ou submersíveis",
+     "metricFOB": "2425516011",
+     "metricKG": "142032040"
+    },
+    {
+     "year": "2026",
+     "monthNumber": "06",
+     "headingCode": "8703",
+     "heading": "Automóveis de passageiros e outros veículos automóveis principalmente concebidos para o transporte de pessoas (exceto os da posição 8702), incluídos os veículos de uso misto (station wagons) e os automóveis de corrida",
+     "metricFOB": "2416575830",
+     "metricKG": "231351932"
+    }
+   ]
+  },
+  {
+   "rotulo": "serie_paises",
+   "fluxo": "export",
+   "periodo": [
+    "2015-01",
+    "2015-12"
+   ],
+   "detalhes": [
+    "country"
+   ],
+   "n_linhas": 2460,
+   "exemplo": [
+    {
+     "year": "2015",
+     "monthNumber": "06",
+     "country": "China",
+     "metricFOB": "4739421378",
+     "metricKG": "25785453804"
+    },
+    {
+     "year": "2015",
+     "monthNumber": "05",
+     "country": "China",
+     "metricFOB": "4108800564",
+     "metricKG": "22535375151"
+    },
+    {
+     "year": "2015",
+     "monthNumber": "07",
+     "country": "China",
+     "metricFOB": "4099958305",
+     "metricKG": "24462144903"
+    }
+   ]
+  },
+  {
+   "rotulo": "serie_paises",
+   "fluxo": "export",
+   "periodo": [
+    "2016-01",
+    "2016-12"
+   ],
+   "detalhes": [
+    "country"
+   ],
+   "n_linhas": 2520,
+   "exemplo": [
+    {
+     "year": "2016",
+     "monthNumber": "05",
+     "country": "China",
+     "metricFOB": "4426627950",
+     "metricKG": "29604423285"
+    },
+    {
+     "year": "2016",
+     "monthNumber": "04",
+     "country": "China",
+     "metricFOB": "4301995455",
+     "metricKG": "26080171233"
+    },
+    {
+     "year": "2016",
+     "monthNumber": "06",
+     "country": "China",
+     "metricFOB": "4075546491",
+     "metricKG": "26207193046"
+    }
+   ]
+  },
+  {
+   "rotulo": "serie_paises",
+   "fluxo": "export",
+   "periodo": [
+    "2017-01",
+    "2017-12"
+   ],
+   "detalhes": [
+    "country"
+   ],
+   "n_linhas": 2516,
+   "exemplo": [
+    {
+     "year": "2017",
+     "monthNumber": "03",
+     "country": "China",
+     "metricFOB": "5539110814",
+     "metricKG": "30377674511"
+    },
+    {
+     "year": "2017",
+     "monthNumber": "04",
+     "country": "China",
+     "metricFOB": "5169962514",
+     "metricKG": "24078403183"
+    },
+    {
+     "year": "2017",
+     "monthNumber": "05",
+     "country": "China",
+     "metricFOB": "5140412666",
+     "metricKG": "31992575825"
+    }
+   ]
+  },
+  {
+   "rotulo": "serie_paises",
+   "fluxo": "export",
+   "periodo": [
+    "2018-01",
+    "2018-12"
+   ],
+   "detalhes": [
+    "country"
+   ],
+   "n_linhas": 2546,
+   "exemplo": [
+    {
+     "year": "2018",
+     "monthNumber": "05",
+     "country": "China",
+     "metricFOB": "6679469097",
+     "metricKG": "32896199318"
+    },
+    {
+     "year": "2018",
+     "monthNumber": "07",
+     "country": "China",
+     "metricFOB": "6615962984",
+     "metricKG": "33527843937"
+    },
+    {
+     "year": "2018",
+     "monthNumber": "08",
+     "country": "China",
+     "metricFOB": "5837742016",
+     "metricKG": "33916118706"
+    }
+   ]
+  },
+  {
+   "rotulo": "serie_paises",
+   "fluxo": "export",
+   "periodo": [
+    "2019-01",
+    "2019-12"
+   ],
+   "detalhes": [
+    "country"
+   ],
+   "n_linhas": 2589,
+   "exemplo": [
+    {
+     "year": "2019",
+     "monthNumber": "10",
+     "country": "China",
+     "metricFOB": "5824344264",
+     "metricKG": "30844686695"
+    },
+    {
+     "year": "2019",
+     "monthNumber": "07",
+     "country": "China",
+     "metricFOB": "5796042847",
+     "metricKG": "34110560207"
+    },
+    {
+     "year": "2019",
+     "monthNumber": "08",
+     "country": "China",
+     "metricFOB": "5740178474",
+     "metricKG": "32981069023"
+    }
+   ]
+  },
+  {
+   "rotulo": "serie_paises",
+   "fluxo": "export",
+   "periodo": [
+    "2020-01",
+    "2020-12"
+   ],
+   "detalhes": [
+    "country"
+   ],
+   "n_linhas": 2561,
+   "exemplo": [
+    {
+     "year": "2020",
+     "monthNumber": "07",
+     "country": "China",
+     "metricFOB": "7227108631",
+     "metricKG": "39659791541"
+    },
+    {
+     "year": "2020",
+     "monthNumber": "06",
+     "country": "China",
+     "metricFOB": "6915205191",
+     "metricKG": "38808345330"
+    },
+    {
+     "year": "2020",
+     "monthNumber": "05",
+     "country": "China",
+     "metricFOB": "6754633318",
+     "metricKG": "33415746635"
+    }
+   ]
+  },
+  {
+   "rotulo": "serie_paises",
+   "fluxo": "export",
+   "periodo": [
+    "2021-01",
+    "2021-12"
+   ],
+   "detalhes": [
+    "country"
+   ],
+   "n_linhas": 2567,
+   "exemplo": [
+    {
+     "year": "2021",
+     "monthNumber": "06",
+     "country": "China",
+     "metricFOB": "10580736548",
+     "metricKG": "37072106773"
+    },
+    {
+     "year": "2021",
+     "monthNumber": "04",
+     "country": "China",
+     "metricFOB": "9803125738",
+     "metricKG": "32478704761"
+    },
+    {
+     "year": "2021",
+     "monthNumber": "08",
+     "country": "China",
+     "metricFOB": "9223010509",
+     "metricKG": "33281716359"
+    }
+   ]
+  },
+  {
+   "rotulo": "serie_paises",
+   "fluxo": "export",
+   "periodo": [
+    "2022-01",
+    "2022-12"
+   ],
+   "detalhes": [
+    "country"
+   ],
+   "n_linhas": 2602,
+   "exemplo": [
+    {
+     "year": "2022",
+     "monthNumber": "06",
+     "country": "China",
+     "metricFOB": "9369918500",
+     "metricKG": "32558635296"
+    },
+    {
+     "year": "2022",
+     "monthNumber": "03",
+     "country": "China",
+     "metricFOB": "9321758715",
+     "metricKG": "29740669111"
+    },
+    {
+     "year": "2022",
+     "monthNumber": "04",
+     "country": "China",
+     "metricFOB": "9273167066",
+     "metricKG": "27543189960"
+    }
+   ]
+  },
+  {
+   "rotulo": "serie_paises",
+   "fluxo": "export",
+   "periodo": [
+    "2023-01",
+    "2023-12"
+   ],
+   "detalhes": [
+    "country"
+   ],
+   "n_linhas": 2608,
+   "exemplo": [
+    {
+     "year": "2023",
+     "monthNumber": "03",
+     "country": "China",
+     "metricFOB": "10964046554",
+     "metricKG": "33670195495"
+    },
+    {
+     "year": "2023",
+     "monthNumber": "05",
+     "country": "China",
+     "metricFOB": "10566779428",
+     "metricKG": "37781511337"
+    },
+    {
+     "year": "2023",
+     "monthNumber": "09",
+     "country": "China",
+     "metricFOB": "9536864118",
+     "metricKG": "39959226841"
+    }
+   ]
+  },
+  {
+   "rotulo": "serie_paises",
+   "fluxo": "export",
+   "periodo": [
+    "2024-01",
+    "2024-12"
+   ],
+   "detalhes": [
+    "country"
+   ],
+   "n_linhas": 2634,
+   "exemplo": [
+    {
+     "year": "2024",
+     "monthNumber": "07",
+     "country": "China",
+     "metricFOB": "10172597056",
+     "metricKG": "44387677507"
+    },
+    {
+     "year": "2024",
+     "monthNumber": "06",
+     "country": "China",
+     "metricFOB": "9591397610",
+     "metricKG": "40391233763"
+    },
+    {
+     "year": "2024",
+     "monthNumber": "05",
+     "country": "China",
+     "metricFOB": "9587542672",
+     "metricKG": "36026296906"
+    }
+   ]
+  },
+  {
+   "rotulo": "serie_paises",
+   "fluxo": "export",
+   "periodo": [
+    "2025-01",
+    "2025-12"
+   ],
+   "detalhes": [
+    "country"
+   ],
+   "n_linhas": 2619,
+   "exemplo": [
+    {
+     "year": "2025",
+     "monthNumber": "06",
+     "country": "China",
+     "metricFOB": "9877481910",
+     "metricKG": "42998002054"
+    },
+    {
+     "year": "2025",
+     "monthNumber": "07",
+     "country": "China",
+     "metricFOB": "9824343120",
+     "metricKG": "44730387132"
+    },
+    {
+     "year": "2025",
+     "monthNumber": "05",
+     "country": "China",
+     "metricFOB": "9590510024",
+     "metricKG": "40782121997"
+    }
+   ]
+  },
+  {
+   "rotulo": "serie_paises",
+   "fluxo": "export",
+   "periodo": [
+    "2026-01",
+    "2026-10"
+   ],
+   "detalhes": [
+    "country"
+   ],
+   "n_linhas": 2171,
+   "exemplo": [
+    {
+     "year": "2026",
+     "monthNumber": "06",
+     "country": "China",
+     "metricFOB": "12072143874",
+     "metricKG": "48407639213"
+    },
+    {
+     "year": "2026",
+     "monthNumber": "04",
+     "country": "China",
+     "metricFOB": "11705142261",
+     "metricKG": "43040612501"
+    },
+    {
+     "year": "2026",
+     "monthNumber": "03",
+     "country": "China",
+     "metricFOB": "10600548035",
+     "metricKG": "38111764452"
+    }
+   ]
+  },
+  {
+   "rotulo": "serie_paises",
+   "fluxo": "import",
+   "periodo": [
+    "2015-01",
+    "2015-12"
+   ],
+   "detalhes": [
+    "country"
+   ],
+   "n_linhas": 2105,
+   "exemplo": [
+    {
+     "year": "2015",
+     "monthNumber": "01",
+     "country": "China",
+     "metricFOB": "3702766247",
+     "metricKG": "1093837176"
+    },
+    {
+     "year": "2015",
+     "monthNumber": "07",
+     "country": "China",
+     "metricFOB": "3252774492",
+     "metricKG": "1061386241"
+    },
+    {
+     "year": "2015",
+     "monthNumber": "03",
+     "country": "China",
+     "metricFOB": "3192567303",
+     "metricKG": "965436639"
+    }
+   ]
+  },
+  {
+   "rotulo": "serie_paises",
+   "fluxo": "import",
+   "periodo": [
+    "2016-01",
+    "2016-12"
+   ],
+   "detalhes": [
+    "country"
+   ],
+   "n_linhas": 2062,
+   "exemplo": [
+    {
+     "year": "2016",
+     "monthNumber": "01",
+     "country": "China",
+     "metricFOB": "2305165590",
+     "metricKG": "632149009"
+    },
+    {
+     "year": "2016",
+     "monthNumber": "08",
+     "country": "Estados Unidos",
+     "metricFOB": "2299978270",
+     "metricKG": "2499888244"
+    },
+    {
+     "year": "2016",
+     "monthNumber": "09",
+     "country": "Estados Unidos",
+     "metricFOB": "2214965669",
+     "metricKG": "2835771763"
+    }
+   ]
+  },
+  {
+   "rotulo": "serie_paises",
+   "fluxo": "import",
+   "periodo": [
+    "2017-01",
+    "2017-12"
+   ],
+   "detalhes": [
+    "country"
+   ],
+   "n_linhas": 2154,
+   "exemplo": [
+    {
+     "year": "2017",
+     "monthNumber": "09",
+     "country": "China",
+     "metricFOB": "2814741185",
+     "metricKG": "1166233013"
+    },
+    {
+     "year": "2017",
+     "monthNumber": "10",
+     "country": "China",
+     "metricFOB": "2723387013",
+     "metricKG": "746014901"
+    },
+    {
+     "year": "2017",
+     "monthNumber": "08",
+     "country": "China",
+     "metricFOB": "2644579626",
+     "metricKG": "764183577"
+    }
+   ]
+  },
+  {
+   "rotulo": "serie_paises",
+   "fluxo": "import",
+   "periodo": [
+    "2018-01",
+    "2018-12"
+   ],
+   "detalhes": [
+    "country"
+   ],
+   "n_linhas": 2101,
+   "exemplo": [
+    {
+     "year": "2018",
+     "monthNumber": "08",
+     "country": "China",
+     "metricFOB": "5038757966",
+     "metricKG": "1087244970"
+    },
+    {
+     "year": "2018",
+     "monthNumber": "07",
+     "country": "China",
+     "metricFOB": "4364286971",
+     "metricKG": "839145408"
+    },
+    {
+     "year": "2018",
+     "monthNumber": "10",
+     "country": "China",
+     "metricFOB": "3125300196",
+     "metricKG": "1142787966"
+    }
+   ]
+  },
+  {
+   "rotulo": "serie_paises",
+   "fluxo": "import",
+   "periodo": [
+    "2019-01",
+    "2019-12"
+   ],
+   "detalhes": [
+    "country"
+   ],
+   "n_linhas": 2100,
+   "exemplo": [
+    {
+     "year": "2019",
+     "monthNumber": "01",
+     "country": "China",
+     "metricFOB": "5156648683",
+     "metricKG": "1036622504"
+    },
+    {
+     "year": "2019",
+     "monthNumber": "07",
+     "country": "Estados Unidos",
+     "metricFOB": "3626128749",
+     "metricKG": "4387656027"
+    },
+    {
+     "year": "2019",
+     "monthNumber": "08",
+     "country": "Estados Unidos",
+     "metricFOB": "3551622976",
+     "metricKG": "3555758929"
+    }
+   ]
+  },
+  {
+   "rotulo": "serie_paises",
+   "fluxo": "import",
+   "periodo": [
+    "2020-01",
+    "2020-12"
+   ],
+   "detalhes": [
+    "country"
+   ],
+   "n_linhas": 2068,
+   "exemplo": [
+    {
+     "year": "2020",
+     "monthNumber": "01",
+     "country": "China",
+     "metricFOB": "5149184397",
+     "metricKG": "1100500911"
+    },
+    {
+     "year": "2020",
+     "monthNumber": "02",
+     "country": "Estados Unidos",
+     "metricFOB": "3693015091",
+     "metricKG": "3005087916"
+    },
+    {
+     "year": "2020",
+     "monthNumber": "11",
+     "country": "China",
+     "metricFOB": "3468179784",
+     "metricKG": "1372049080"
+    }
+   ]
+  },
+  {
+   "rotulo": "serie_paises",
+   "fluxo": "import",
+   "periodo": [
+    "2021-01",
+    "2021-12"
+   ],
+   "detalhes": [
+    "country"
+   ],
+   "n_linhas": 2073,
+   "exemplo": [
+    {
+     "year": "2021",
+     "monthNumber": "12",
+     "country": "China",
+     "metricFOB": "4788503235",
+     "metricKG": "1686564977"
+    },
+    {
+     "year": "2021",
+     "monthNumber": "09",
+     "country": "China",
+     "metricFOB": "4591217635",
+     "metricKG": "1638647009"
+    },
+    {
+     "year": "2021",
+     "monthNumber": "11",
+     "country": "China",
+     "metricFOB": "4434935574",
+     "metricKG": "1687031859"
+    }
+   ]
+  },
+  {
+   "rotulo": "serie_paises",
+   "fluxo": "import",
+   "periodo": [
+    "2022-01",
+    "2022-12"
+   ],
+   "detalhes": [
+    "country"
+   ],
+   "n_linhas": 2094,
+   "exemplo": [
+    {
+     "year": "2022",
+     "monthNumber": "08",
+     "country": "China",
+     "metricFOB": "6446476474",
+     "metricKG": "1812697859"
+    },
+    {
+     "year": "2022",
+     "monthNumber": "09",
+     "country": "China",
+     "metricFOB": "5808882994",
+     "metricKG": "1948039555"
+    },
+    {
+     "year": "2022",
+     "monthNumber": "10",
+     "country": "China",
+     "metricFOB": "5474808931",
+     "metricKG": "1900229213"
+    }
+   ]
+  },
+  {
+   "rotulo": "serie_paises",
+   "fluxo": "import",
+   "periodo": [
+    "2023-01",
+    "2023-12"
+   ],
+   "detalhes": [
+    "country"
+   ],
+   "n_linhas": 2103,
+   "exemplo": [
+    {
+     "year": "2023",
+     "monthNumber": "08",
+     "country": "China",
+     "metricFOB": "5014074143",
+     "metricKG": "2089575372"
+    },
+    {
+     "year": "2023",
+     "monthNumber": "09",
+     "country": "China",
+     "metricFOB": "4825296236",
+     "metricKG": "2291940387"
+    },
+    {
+     "year": "2023",
+     "monthNumber": "12",
+     "country": "China",
+     "metricFOB": "4621504568",
+     "metricKG": "2234325375"
+    }
+   ]
+  },
+  {
+   "rotulo": "serie_paises",
+   "fluxo": "import",
+   "periodo": [
+    "2024-01",
+    "2024-12"
+   ],
+   "detalhes": [
+    "country"
+   ],
+   "n_linhas": 2186,
+   "exemplo": [
+    {
+     "year": "2024",
+     "monthNumber": "10",
+     "country": "China",
+     "metricFOB": "6652706173",
+     "metricKG": "3300657751"
+    },
+    {
+     "year": "2024",
+     "monthNumber": "06",
+     "country": "China",
+     "metricFOB": "5841394471",
+     "metricKG": "1869475889"
+    },
+    {
+     "year": "2024",
+     "monthNumber": "08",
+     "country": "China",
+     "metricFOB": "5802738502",
+     "metricKG": "2730831950"
+    }
+   ]
+  },
+  {
+   "rotulo": "serie_paises",
+   "fluxo": "import",
+   "periodo": [
+    "2025-01",
+    "2025-12"
+   ],
+   "detalhes": [
+    "country"
+   ],
+   "n_linhas": 2242,
+   "exemplo": [
+    {
+     "year": "2025",
+     "monthNumber": "02",
+     "country": "China",
+     "metricFOB": "7978202807",
+     "metricKG": "2273906201"
+    },
+    {
+     "year": "2025",
+     "monthNumber": "10",
+     "country": "China",
+     "metricFOB": "6427826005",
+     "metricKG": "3399041436"
+    },
+    {
+     "year": "2025",
+     "monthNumber": "09",
+     "country": "China",
+     "metricFOB": "6272900680",
+     "metricKG": "2908160707"
+    }
+   ]
+  },
+  {
+   "rotulo": "serie_paises",
+   "fluxo": "import",
+   "periodo": [
+    "2026-01",
+    "2026-10"
+   ],
+   "detalhes": [
+    "country"
+   ],
+   "n_linhas": 1860,
+   "exemplo": [
+    {
+     "year": "2026",
+     "monthNumber": "06",
+     "country": "China",
+     "metricFOB": "7784095517",
+     "metricKG": "2394942937"
+    },
+    {
+     "year": "2026",
+     "monthNumber": "10",
+     "country": "China",
+     "metricFOB": "7528277872",
+     "metricKG": "3225919831"
+    },
+    {
+     "year": "2026",
+     "monthNumber": "09",
+     "country": "China",
+     "metricFOB": "7062680351",
+     "metricKG": "2174966251"
+    }
+   ]
+  },
+  {
+   "rotulo": "serie_estados",
+   "fluxo": "export",
+   "periodo": [
+    "2015-01",
+    "2015-12"
+   ],
+   "detalhes": [
+    "state"
+   ],
+   "n_linhas": 372,
+   "exemplo": [
+    {
+     "year": "2015",
+     "monthNumber": "06",
+     "state": "São Paulo",
+     "metricFOB": "4454680267",
+     "metricKG": "4133172897"
+    },
+    {
+     "year": "2015",
+     "monthNumber": "03",
+     "state": "São Paulo",
+     "metricFOB": "4410038595",
+     "metricKG": "3944273548"
+    },
+    {
+     "year": "2015",
+     "monthNumber": "12",
+     "state": "São Paulo",
+     "metricFOB": "4361041762",
+     "metricKG": "4203378583"
+    }
+   ]
+  },
+  {
+   "rotulo": "serie_estados",
+   "fluxo": "export",
+   "periodo": [
+    "2016-01",
+    "2016-12"
+   ],
+   "detalhes": [
+    "state"
+   ],
+   "n_linhas": 367,
+   "exemplo": [
+    {
+     "year": "2016",
+     "monthNumber": "08",
+     "state": "São Paulo",
+     "metricFOB": "4381987095",
+     "metricKG": "4170241513"
+    },
+    {
+     "year": "2016",
+     "monthNumber": "12",
+     "state": "São Paulo",
+     "metricFOB": "4362970936",
+     "metricKG": "3636297793"
+    },
+    {
+     "year": "2016",
+     "monthNumber": "06",
+     "state": "São Paulo",
+     "metricFOB": "4270266515",
+     "metricKG": "4589446681"
+    }
+   ]
+  },
+  {
+   "rotulo": "serie_estados",
+   "fluxo": "export",
+   "periodo": [
+    "2017-01",
+    "2017-12"
+   ],
+   "detalhes": [
+    "state"
+   ],
+   "n_linhas": 359,
+   "exemplo": [
+    {
+     "year": "2017",
+     "monthNumber": "06",
+     "state": "São Paulo",
+     "metricFOB": "4680752645",
+     "metricKG": "5174132436"
+    },
+    {
+     "year": "2017",
+     "monthNumber": "08",
+     "state": "São Paulo",
+     "metricFOB": "4538873894",
+     "metricKG": "4062334531"
+    },
+    {
+     "year": "2017",
+     "monthNumber": "05",
+     "state": "São Paulo",
+     "metricFOB": "4514369558",
+     "metricKG": "4179376169"
+    }
+   ]
+  },
+  {
+   "rotulo": "serie_estados",
+   "fluxo": "export",
+   "periodo": [
+    "2018-01",
+    "2018-12"
+   ],
+   "detalhes": [
+    "state"
+   ],
+   "n_linhas": 346,
+   "exemplo": [
+    {
+     "year": "2018",
+     "monthNumber": "03",
+     "state": "São Paulo",
+     "metricFOB": "5055430488",
+     "metricKG": "5288517792"
+    },
+    {
+     "year": "2018",
+     "monthNumber": "10",
+     "state": "São Paulo",
+     "metricFOB": "4939617715",
+     "metricKG": "4365940025"
+    },
+    {
+     "year": "2018",
+     "monthNumber": "08",
+     "state": "São Paulo",
+     "metricFOB": "4831271644",
+     "metricKG": "4451213637"
+    }
+   ]
+  },
+  {
+   "rotulo": "serie_estados",
+   "fluxo": "export",
+   "periodo": [
+    "2019-01",
+    "2019-12"
+   ],
+   "detalhes": [
+    "state"
+   ],
+   "n_linhas": 336,
+   "exemplo": [
+    {
+     "year": "2019",
+     "monthNumber": "04",
+     "state": "São Paulo",
+     "metricFOB": "4494229494",
+     "metricKG": "4042513003"
+    },
+    {
+     "year": "2019",
+     "monthNumber": "05",
+     "state": "São Paulo",
+     "metricFOB": "4484916730",
+     "metricKG": "4292053155"
+    },
+    {
+     "year": "2019",
+     "monthNumber": "11",
+     "state": "São Paulo",
+     "metricFOB": "4151537606",
+     "metricKG": "3769030058"
+    }
+   ]
+  },
+  {
+   "rotulo": "serie_estados",
+   "fluxo": "export",
+   "periodo": [
+    "2020-01",
+    "2020-12"
+   ],
+   "detalhes": [
+    "state"
+   ],
+   "n_linhas": 336,
+   "exemplo": [
+    {
+     "year": "2020",
+     "monthNumber": "12",
+     "state": "São Paulo",
+     "metricFOB": "4286799495",
+     "metricKG": "4432003696"
+    },
+    {
+     "year": "2020",
+     "monthNumber": "10",
+     "state": "São Paulo",
+     "metricFOB": "3933663694",
+     "metricKG": "4603753938"
+    },
+    {
+     "year": "2020",
+     "monthNumber": "11",
+     "state": "São Paulo",
+     "metricFOB": "3816281839",
+     "metricKG": "4750022318"
+    }
+   ]
+  },
+  {
+   "rotulo": "serie_estados",
+   "fluxo": "export",
+   "periodo": [
+    "2021-01",
+    "2021-12"
+   ],
+   "detalhes": [
+    "state"
+   ],
+   "n_linhas": 336,
+   "exemplo": [
+    {
+     "year": "2021",
+     "monthNumber": "09",
+     "state": "São Paulo",
+     "metricFOB": "5258249212",
+     "metricKG": "4983469263"
+    },
+    {
+     "year": "2021",
+     "monthNumber": "12",
+     "state": "São Paulo",
+     "metricFOB": "5222725420",
+     "metricKG": "3998929783"
+    },
+    {
+     "year": "2021",
+     "monthNumber": "05",
+     "state": "São Paulo",
+     "metricFOB": "4948186679",
+     "metricKG": "5431545514"
+    }
+   ]
+  },
+  {
+   "rotulo": "serie_estados",
+   "fluxo": "export",
+   "periodo": [
+    "2022-01",
+    "2022-12"
+   ],
+   "detalhes": [
+    "state"
+   ],
+   "n_linhas": 336,
+   "exemplo": [
+    {
+     "year": "2022",
+     "monthNumber": "08",
+     "state": "São Paulo",
+     "metricFOB": "7064662057",
+     "metricKG": "6027905348"
+    },
+    {
+     "year": "2022",
+     "monthNumber": "06",
+     "state": "São Paulo",
+     "metricFOB": "6355866698",
+     "metricKG": "4896967553"
+    },
+    {
+     "year": "2022",
+     "monthNumber": "09",
+     "state": "São Paulo",
+     "metricFOB": "6291165305",
+     "metricKG": "5689826843"
+    }
+   ]
+  },
+  {
+   "rotulo": "serie_estados",
+   "fluxo": "export",
+   "periodo": [
+    "2023-01",
+    "2023-12"
+   ],
+   "detalhes": [
+    "state"
+   ],
+   "n_linhas": 336,
+   "exemplo": [
+    {
+     "year": "2023",
+     "monthNumber": "12",
+     "state": "São Paulo",
+     "metricFOB": "6572535423",
+     "metricKG": "5575987339"
+    },
+    {
+     "year": "2023",
+     "monthNumber": "10",
+     "state": "São Paulo",
+     "metricFOB": "6557513461",
+     "metricKG": "4997934886"
+    },
+    {
+     "year": "2023",
+     "monthNumber": "05",
+     "state": "São Paulo",
+     "metricFOB": "6504465238",
+     "metricKG": "6034635839"
+    }
+   ]
+  },
+  {
+   "rotulo": "serie_estados",
+   "fluxo": "export",
+   "periodo": [
+    "2024-01",
+    "2024-12"
+   ],
+   "detalhes": [
+    "state"
+   ],
+   "n_linhas": 336,
+   "exemplo": [
+    {
+     "year": "2024",
+     "monthNumber": "10",
+     "state": "São Paulo",
+     "metricFOB": "6779266899",
+     "metricKG": "5752806435"
+    },
+    {
+     "year": "2024",
+     "monthNumber": "09",
+     "state": "São Paulo",
+     "metricFOB": "6649278922",
+     "metricKG": "5665755166"
+    },
+    {
+     "year": "2024",
+     "monthNumber": "05",
+     "state": "São Paulo",
+     "metricFOB": "6150023439",
+     "metricKG": "5420473713"
+    }
+   ]
+  },
+  {
+   "rotulo": "serie_estados",
+   "fluxo": "export",
+   "periodo": [
+    "2025-01",
+    "2025-12"
+   ],
+   "detalhes": [
+    "state"
+   ],
+   "n_linhas": 336,
+   "exemplo": [
+    {
+     "year": "2025",
+     "monthNumber": "07",
+     "state": "São Paulo",
+     "metricFOB": "7049287315",
+     "metricKG": "5820320647"
+    },
+    {
+     "year": "2025",
+     "monthNumber": "09",
+     "state": "São Paulo",
+     "metricFOB": "6426370650",
+     "metricKG": "5231558216"
+    },
+    {
+     "year": "2025",
+     "monthNumber": "10",
+     "state": "São Paulo",
+     "metricFOB": "6244827888",
+     "metricKG": "5811477237"
+    }
+   ]
+  },
+  {
+   "rotulo": "serie_estados",
+   "fluxo": "export",
+   "periodo": [
+    "2026-01",
+    "2026-10"
+   ],
+   "detalhes": [
+    "state"
+   ],
+   "n_linhas": 280,
+   "exemplo": [
+    {
+     "year": "2026",
+     "monthNumber": "06",
+     "state": "São Paulo",
+     "metricFOB": "7084642484",
+     "metricKG": "5959114985"
+    },
+    {
+     "year": "2026",
+     "monthNumber": "10",
+     "state": "Rio de Janeiro",
+     "metricFOB": "7075817526",
+     "metricKG": "14240539848"
+    },
+    {
+     "year": "2026",
+     "monthNumber": "09",
+     "state": "São Paulo",
+     "metricFOB": "7017653727",
+     "metricKG": "5064405564"
+    }
+   ]
+  },
+  {
+   "rotulo": "serie_estados",
+   "fluxo": "import",
+   "periodo": [
+    "2015-01",
+    "2015-12"
+   ],
+   "detalhes": [
+    "state"
+   ],
+   "n_linhas": 345,
+   "exemplo": [
+    {
+     "year": "2015",
+     "monthNumber": "03",
+     "state": "São Paulo",
+     "metricFOB": "5954308618",
+     "metricKG": "2485317715"
+    },
+    {
+     "year": "2015",
+     "monthNumber": "02",
+     "state": "São Paulo",
+     "metricFOB": "5871147623",
+     "metricKG": "3041044963"
+    },
+    {
+     "year": "2015",
+     "monthNumber": "06",
+     "state": "São Paulo",
+     "metricFOB": "5705860127",
+     "metricKG": "2482559983"
+    }
+   ]
+  },
+  {
+   "rotulo": "serie_estados",
+   "fluxo": "import",
+   "periodo": [
+    "2016-01",
+    "2016-12"
+   ],
+   "detalhes": [
+    "state"
+   ],
+   "n_linhas": 343,
+   "exemplo": [
+    {
+     "year": "2016",
+     "monthNumber": "08",
+     "state": "São Paulo",
+     "metricFOB": "4916335885",
+     "metricKG": "1913763369"
+    },
+    {
+     "year": "2016",
+     "monthNumber": "09",
+     "state": "São Paulo",
+     "metricFOB": "4637993467",
+     "metricKG": "2177700173"
+    },
+    {
+     "year": "2016",
+     "monthNumber": "06",
+     "state": "São Paulo",
+     "metricFOB": "4541063611",
+     "metricKG": "2157157782"
+    }
+   ]
+  },
+  {
+   "rotulo": "serie_estados",
+   "fluxo": "import",
+   "periodo": [
+    "2017-01",
+    "2017-12"
+   ],
+   "detalhes": [
+    "state"
+   ],
+   "n_linhas": 342,
+   "exemplo": [
+    {
+     "year": "2017",
+     "monthNumber": "10",
+     "state": "São Paulo",
+     "metricFOB": "5513474627",
+     "metricKG": "2211950142"
+    },
+    {
+     "year": "2017",
+     "monthNumber": "08",
+     "state": "São Paulo",
+     "metricFOB": "5499689083",
+     "metricKG": "2198456484"
+    },
+    {
+     "year": "2017",
+     "monthNumber": "09",
+     "state": "São Paulo",
+     "metricFOB": "5319920231",
+     "metricKG": "2107394663"
+    }
+   ]
+  },
+  {
+   "rotulo": "serie_estados",
+   "fluxo": "import",
+   "periodo": [
+    "2018-01",
+    "2018-12"
+   ],
+   "detalhes": [
+    "state"
+   ],
+   "n_linhas": 340,
+   "exemplo": [
+    {
+     "year": "2018",
+     "monthNumber": "08",
+     "state": "São Paulo",
+     "metricFOB": "6245074794",
+     "metricKG": "2451401931"
+    },
+    {
+     "year": "2018",
+     "monthNumber": "10",
+     "state": "São Paulo",
+     "metricFOB": "6208048872",
+     "metricKG": "2457942570"
+    },
+    {
+     "year": "2018",
+     "monthNumber": "06",
+     "state": "São Paulo",
+     "metricFOB": "5655653492",
+     "metricKG": "1988095802"
+    }
+   ]
+  },
+  {
+   "rotulo": "serie_estados",
+   "fluxo": "import",
+   "periodo": [
+    "2019-01",
+    "2019-12"
+   ],
+   "detalhes": [
+    "state"
+   ],
+   "n_linhas": 337,
+   "exemplo": [
+    {
+     "year": "2019",
+     "monthNumber": "07",
+     "state": "São Paulo",
+     "metricFOB": "5968050763",
+     "metricKG": "2318333191"
+    },
+    {
+     "year": "2019",
+     "monthNumber": "10",
+     "state": "São Paulo",
+     "metricFOB": "5944556681",
+     "metricKG": "2424045071"
+    },
+    {
+     "year": "2019",
+     "monthNumber": "05",
+     "state": "São Paulo",
+     "metricFOB": "5745883011",
+     "metricKG": "2227247651"
+    }
+   ]
+  },
+  {
+   "rotulo": "serie_estados",
+   "fluxo": "import",
+   "periodo": [
+    "2020-01",
+    "2020-12"
+   ],
+   "detalhes": [
+    "state"
+   ],
+   "n_linhas": 339,
+   "exemplo": [
+    {
+     "year": "2020",
+     "monthNumber": "01",
+     "state": "São Paulo",
+     "metricFOB": "5315351969",
+     "metricKG": "2212073258"
+    },
+    {
+     "year": "2020",
+     "monthNumber": "11",
+     "state": "São Paulo",
+     "metricFOB": "5131873406",
+     "metricKG": "1873745404"
+    },
+    {
+     "year": "2020",
+     "monthNumber": "03",
+     "state": "São Paulo",
+     "metricFOB": "5013364973",
+     "metricKG": "2320236753"
+    }
+   ]
+  },
+  {
+   "rotulo": "serie_estados",
+   "fluxo": "import",
+   "periodo": [
+    "2021-01",
+    "2021-12"
+   ],
+   "detalhes": [
+    "state"
+   ],
+   "n_linhas": 332,
+   "exemplo": [
+    {
+     "year": "2021",
+     "monthNumber": "03",
+     "state": "São Paulo",
+     "metricFOB": "6088449767",
+     "metricKG": "2393369105"
+    },
+    {
+     "year": "2021",
+     "monthNumber": "08",
+     "state": "São Paulo",
+     "metricFOB": "5965419946",
+     "metricKG": "2092361379"
+    },
+    {
+     "year": "2021",
+     "monthNumber": "09",
+     "state": "São Paulo",
+     "metricFOB": "5948436792",
+     "metricKG": "2251575662"
+    }
+   ]
+  },
+  {
+   "rotulo": "serie_estados",
+   "fluxo": "import",
+   "periodo": [
+    "2022-01",
+    "2022-12"
+   ],
+   "detalhes": [
+    "state"
+   ],
+   "n_linhas": 328,
+   "exemplo": [
+    {
+     "year": "2022",
+     "monthNumber": "08",
+     "state": "São Paulo",
+     "metricFOB": "8581934352",
+     "metricKG": "2844283571"
+    },
+    {
+     "year": "2022",
+     "monthNumber": "07",
+     "state": "São Paulo",
+     "metricFOB": "7658438462",
+     "metricKG": "2726642504"
+    },
+    {
+     "year": "2022",
+     "monthNumber": "09",
+     "state": "São Paulo",
+     "metricFOB": "7518346156",
+     "metricKG": "2425221339"
+    }
+   ]
+  },
+  {
+   "rotulo": "serie_estados",
+   "fluxo": "import",
+   "periodo": [
+    "2023-01",
+    "2023-12"
+   ],
+   "detalhes": [
+    "state"
+   ],
+   "n_linhas": 331,
+   "exemplo": [
+    {
+     "year": "2023",
+     "monthNumber": "03",
+     "state": "São Paulo",
+     "metricFOB": "6711496641",
+     "metricKG": "2166721965"
+    },
+    {
+     "year": "2023",
+     "monthNumber": "08",
+     "state": "São Paulo",
+     "metricFOB": "6512869081",
+     "metricKG": "1986083701"
+    },
+    {
+     "year": "2023",
+     "monthNumber": "10",
+     "state": "São Paulo",
+     "metricFOB": "6426470035",
+     "metricKG": "2261440036"
+    }
+   ]
+  },
+  {
+   "rotulo": "serie_estados",
+   "fluxo": "import",
+   "periodo": [
+    "2024-01",
+    "2024-12"
+   ],
+   "detalhes": [
+    "state"
+   ],
+   "n_linhas": 331,
+   "exemplo": [
+    {
+     "year": "2024",
+     "monthNumber": "10",
+     "state": "São Paulo",
+     "metricFOB": "7574912028",
+     "metricKG": "2726762751"
+    },
+    {
+     "year": "2024",
+     "monthNumber": "08",
+     "state": "São Paulo",
+     "metricFOB": "6934451436",
+     "metricKG": "2185922352"
+    },
+    {
+     "year": "2024",
+     "monthNumber": "07",
+     "state": "São Paulo",
+     "metricFOB": "6814057597",
+     "metricKG": "2133661533"
+    }
+   ]
+  },
+  {
+   "rotulo": "serie_estados",
+   "fluxo": "import",
+   "periodo": [
+    "2025-01",
+    "2025-12"
+   ],
+   "detalhes": [
+    "state"
+   ],
+   "n_linhas": 330,
+   "exemplo": [
+    {
+     "year": "2025",
+     "monthNumber": "02",
+     "state": "São Paulo",
+     "metricFOB": "9019034660",
+     "metricKG": "2208021111"
+    },
+    {
+     "year": "2025",
+     "monthNumber": "07",
+     "state": "São Paulo",
+     "metricFOB": "7938900258",
+     "metricKG": "2717368167"
+    },
+    {
+     "year": "2025",
+     "monthNumber": "09",
+     "state": "São Paulo",
+     "metricFOB": "7890331414",
+     "metricKG": "2453099971"
+    }
+   ]
+  },
+  {
+   "rotulo": "serie_estados",
+   "fluxo": "import",
+   "periodo": [
+    "2026-01",
+    "2026-10"
+   ],
+   "detalhes": [
+    "state"
+   ],
+   "n_linhas": 279,
+   "exemplo": [
+    {
+     "year": "2026",
+     "monthNumber": "07",
+     "state": "São Paulo",
+     "metricFOB": "9247202790",
+     "metricKG": "2850167154"
+    },
+    {
+     "year": "2026",
+     "monthNumber": "10",
+     "state": "São Paulo",
+     "metricFOB": "8821265502",
+     "metricKG": "2651077419"
+    },
+    {
+     "year": "2026",
+     "monthNumber": "09",
+     "state": "São Paulo",
+     "metricFOB": "8404665901",
+     "metricKG": "2052030474"
+    }
+   ]
+  },
+  {
+   "rotulo": "mensal",
+   "fluxo": "export",
+   "periodo": [
+    "2015-01",
     "2026-10"
    ],
    "detalhes": [],
-   "n_linhas": 20,
+   "n_linhas": 120,
    "exemplo": [
     {
      "year": "2026",
@@ -34,11 +2626,11 @@
    "rotulo": "mensal",
    "fluxo": "import",
    "periodo": [
-    "2025-01",
+    "2015-01",
     "2026-10"
    ],
    "detalhes": [],
-   "n_linhas": 20,
+   "n_linhas": 120,
    "exemplo": [
     {
      "year": "2026",
