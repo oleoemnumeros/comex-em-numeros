@@ -31,6 +31,7 @@ PAUSA = 4          # segundos entre chamadas
 ESPERA_429 = 12    # segundos após bloqueio por excesso de chamadas
 TENTATIVAS = 6
 UA = "ComexEmNumeros/1.0 (+https://comexemnumeros.com.br)"
+VERSAO = 2  # mude quando o formato de data/dados.json mudar: força nova coleta
 
 MESES_PT = {
     "janeiro": 1, "fevereiro": 2, "março": 3, "marco": 3, "abril": 4,
@@ -217,6 +218,17 @@ def agrega(ls: list[dict], detalhe: str) -> dict:
     return out
 
 
+def agrega2(ls: list[dict], d1: str, d2: str) -> dict:
+    """Soma FOB por (código de d1, nome de d2)."""
+    out: dict[tuple, float] = {}
+    for l in ls:
+        _, cod = rotulo_e_codigo(l, d1)
+        nome2 = str(l.get(d2) or "").strip()
+        k = (cod, nome2)
+        out[k] = out.get(k, 0.0) + num(l.get("metricFOB"))
+    return out
+
+
 def comparar(atual: dict, anterior: dict) -> list[dict]:
     res = []
     for cod in set(atual) | set(anterior):
@@ -243,11 +255,12 @@ def main() -> int:
 
     if ARQ_DADOS.exists() and not forcar:
         atual = json.loads(ARQ_DADOS.read_text(encoding="utf-8"))
-        if atual.get("mes") == ref:
+        if atual.get("mes") == ref and atual.get("versao") == VERSAO:
             log("Os dados já estão atualizados. Nada a fazer.")
             return 0
 
     dados: dict = {
+        "versao": VERSAO,
         "mes": ref,
         "mes_ant": ant,
         "gerado_em": dt.datetime.now(dt.timezone.utc).isoformat(timespec="seconds"),
@@ -291,7 +304,29 @@ def main() -> int:
                 dados[chave][fluxo] = []
                 debug.setdefault("erros", []).append(f"{chave}/{fluxo}: {e}")
 
-    # 3) Acumulado no ano (a partir da série mensal)
+    # 3) Cruzamentos: produto x país e produto x estado.
+    #    Formato compacto: [código SH4, nome do país/estado, fob atual, fob ano anterior]
+    dados["cruzado"] = {}
+    for chave, detalhe in (("produto_pais", "country"), ("produto_estado", "state")):
+        dados["cruzado"][chave] = {}
+        for fluxo in ("export", "import"):
+            try:
+                a = agrega2(consulta(fluxo, ref, ref, ["heading", detalhe], False, chave), "heading", detalhe)
+                b = agrega2(consulta(fluxo, ant, ant, ["heading", detalhe], False, chave), "heading", detalhe)
+                linhas_ = []
+                for k in set(a) | set(b):
+                    fa, fb = a.get(k, 0.0), b.get(k, 0.0)
+                    if max(fa, fb) >= 1000:  # ignora fluxos abaixo de US$ 1 mil
+                        linhas_.append([k[0], k[1], round(fa), round(fb)])
+                linhas_.sort(key=lambda x: -x[2])
+                dados["cruzado"][chave][fluxo] = linhas_
+                log(f"  {chave}/{fluxo}: {len(linhas_)} combinações")
+            except Exception as e:  # noqa: BLE001
+                log(f"  ERRO em {chave}/{fluxo}: {e}")
+                dados["cruzado"][chave][fluxo] = []
+                debug.setdefault("erros", []).append(f"{chave}/{fluxo}: {e}")
+
+    # 4) Acumulado no ano (a partir da série mensal)
     acum = {}
     for fluxo, serie in dados["mensal"].items():
         cur = sum(x["fob"] for x in serie if x["mes"].startswith(f"{ano}-") and x["mes"] <= ref)
