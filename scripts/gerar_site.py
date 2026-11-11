@@ -15,11 +15,18 @@ import json
 import re
 import shutil
 import unicodedata
+from email.utils import format_datetime
 from pathlib import Path
+
+try:  # a imagem do mês precisa do Pillow; sem ele o site sai igual, só sem a imagem
+    from card import gera_card
+except ImportError:  # pragma: no cover
+    gera_card = None
 
 RAIZ = Path(__file__).resolve().parent.parent
 SITE = RAIZ / "site"
 DADOS = RAIZ / "data" / "dados.json"
+RESUMOS = RAIZ / "data" / "resumos"
 SAIDA = RAIZ / "docs"
 DOMINIO = "comexemnumeros.com.br"
 BASE = f"https://{DOMINIO}"
@@ -582,7 +589,7 @@ NAV = [("/", "Início"), ("/exportacao/", "Exportação"), ("/importacao/", "Imp
        ("/produtos/", "Produtos"), ("/paises/", "Países"), ("/estados/", "Estados"), ("/sobre/", "Como funciona")]
 
 
-def pagina(B, caminho, titulo, descricao, corpo, ativo="", jsonld=None, migalhas=None) -> str:
+def pagina(B, caminho, titulo, descricao, corpo, ativo="", jsonld=None, migalhas=None, imagem=None) -> str:
     url = BASE + caminho
     nav = "".join(f'<a href="{h}"' + (' aria-current="page"' if h == ativo else "") + f">{t}</a>" for h, t in NAV)
     bc = ""
@@ -606,7 +613,8 @@ def pagina(B, caminho, titulo, descricao, corpo, ativo="", jsonld=None, migalhas
 <meta property="og:description" content="{esc(descricao)}">
 <meta property="og:url" content="{url}">
 <meta property="og:locale" content="pt_BR">
-<meta property="og:image" content="{BASE}/assets/og.png">
+<meta property="og:image" content="{imagem or BASE + "/assets/og.png"}">
+<link rel="alternate" type="application/rss+xml" title="Comex em Números: resumo do mês" href="{BASE}/feed.xml">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta name="twitter:card" content="summary_large_image">
@@ -633,7 +641,7 @@ def pagina(B, caminho, titulo, descricao, corpo, ativo="", jsonld=None, migalhas
 <footer><div>
 <span><strong>Comex em Números</strong> · versão beta</span>
 <span>Fonte: Comex Stat, Secex/MDIC. Valores em US$ FOB. Variações sempre contra o mesmo mês do ano anterior ({mes_nome(B.ant)}). Por estado, vale a UF de origem do produto exportado ou de destino do importado.</span>
-<span><a href="/produtos/">Todos os produtos</a> · <a href="/paises/">Países</a> · <a href="/estados/">Estados</a> · <a href="/sobre/">Como funciona</a></span>
+<span><a href="/resumo/">Resumos mensais</a> · <a href="/produtos/">Todos os produtos</a> · <a href="/paises/">Países</a> · <a href="/estados/">Estados</a> · <a href="/sobre/">Como funciona</a></span>
 </div></footer>
 <script src="/assets/app.js?v={v}" defer></script>
 {GOAT}
@@ -690,7 +698,7 @@ def pg_inicio(B) -> str:
     c = f"""<div class="card"><span class="eyebrow">Balança comercial · {mes_nome(B.ref)}</span><h1>{esc(titulo_h)}</h1>
 <p class="lede">{resumo_fluxo(B, "export")}</p>
 <p class="lede">Nas importações, o país comprou <strong class="num">{us(I)}</strong>{var_par(I, I0)}. O saldo do mês foi de <strong class="num">{us(s)}</strong>, contra {us(s0)} um ano antes.</p>
-<p class="src">Resumo gerado automaticamente com os dados oficiais do Comex Stat.</p></div>
+<p class="src">Resumo gerado automaticamente com os dados oficiais do Comex Stat. <a href="/resumo/{B.ref}/">Ler o resumo completo de {MESES[int(B.ref[5:]) - 1]} →</a></p></div>
 <div class="tiles">{tile("exp", "Exportações", nf(E / 1e9, 2), "US$ bi", chip(E, E0), "/exportacao/")}{tile("imp", "Importações", nf(I / 1e9, 2), "US$ bi", chip(I, I0), "/importacao/")}{tile("bal", "Saldo", nf(s / 1e9, 2), "US$ bi", saldo_chip)}{tile("", "Corrente de comércio", nf((E + I) / 1e9, 2), "US$ bi", chip(E + I, E0 + I0))}</div>
 <div class="two"><div class="card chart"><div class="row-head"><h2>Últimos 13 meses</h2>{LEGENDA}</div><div role="img" aria-label="Exportações e importações mensais do Brasil nos últimos 13 meses">{svg_mensal(B)}</div><p class="src">US$ bilhões FOB. Linha de baixo: saldo do mês. Em destaque, o mês atual e o mesmo mês do ano anterior.</p></div>
 <div class="card"><h2>Acumulado no ano</h2><table><thead><tr><th>Jan–{MES_CURTO[int(B.ref[5:]) - 1]}/{B.ref[:4]}</th><th class="r">US$ bi</th><th class="r">vs {B.ant[:4]}</th></tr></thead><tbody>
@@ -922,6 +930,136 @@ def pg_lugar(B, tipo: str, it: dict) -> str:
     return pagina(B, it["url"], t, desc, c, migalha[0], migalhas=[migalha, (None, nome)])
 
 
+def titulo_mes(B) -> str:
+    E, E0, I = B.tot("export", B.ref), B.tot("export", B.ant), B.tot("import", B.ref)
+    s = E - I
+    pE = pct(E, E0) or 0
+    mes = MESES[int(B.ref[5:]) - 1]
+    return (f'Exportações {"sobem" if pE >= 0 else "caem"} {nf(abs(pE), 1)}% em {mes} e '
+            + (f"saldo chega a {us(s)}" if s >= 0 else f"balança fica negativa em {us(-s)}"))
+
+
+def texto_post(B) -> str:
+    """Texto pronto para o LinkedIn (vai no feed RSS e o Zapier publica)."""
+    E, E0, I, I0 = B.tot("export", B.ref), B.tot("export", B.ant), B.tot("import", B.ref), B.tot("import", B.ant)
+    ps = B.lista("produtos", "export")
+    a, q = altas(ps, 2e7)[:3], quedas(ps, 2e7)[:2]
+    dest = [r for r in B.lista("paises", "export") if r["fob"] > 0][:3]
+    l = [f"Balança comercial de {mes_nome(B.ref)}", "",
+         f"O Brasil exportou {us(E)}{var_par(E, E0)} e importou {us(I)}{var_par(I, I0)} na comparação com {mes_nome(B.ant)}. "
+         f"Saldo de {us(E - I)}.", ""]
+    if a:
+        l.append("O que mais puxou as exportações:")
+        l += [f"▲ {B.prod[r['codigo']]['curto']}: +{us(r['fob'] - r['fob_ant'])}" for r in a]
+        l.append("")
+    if q:
+        l.append("Maiores quedas:")
+        l += [f"▼ {B.prod[r['codigo']]['curto']}: {us(r['fob'] - r['fob_ant'])}" for r in q]
+        l.append("")
+    if dest:
+        nomes = [f"{r['nome']} ({us(r['fob'])})" for r in dest]
+        l += ["Principais destinos: " + ", ".join(nomes[:-1]) + f" e {nomes[-1]}.", ""]
+    l += ["Ranking completo por produto, país e estado, com série desde 2015:", f"{BASE}/resumo/{B.ref}/", "",
+          "#comercioexterior #exportacao #importacao #balancacomercial #comex"]
+    return "\n".join(l)
+
+
+def corpo_resumo(B, post: str) -> str:
+    E, E0, I, I0 = B.tot("export", B.ref), B.tot("export", B.ant), B.tot("import", B.ref), B.tot("import", B.ant)
+    s, s0 = E - I, E0 - I0
+    pe, pi = B.lista("produtos", "export"), B.lista("produtos", "import")
+    sem_nd = lambda rs: [r for r in rs if r["nome"] != "UF não declarada"]
+    return f"""<div class="card"><span class="eyebrow">Resumo do mês · {mes_nome(B.ref)}</span><h1>{esc(titulo_mes(B))}</h1>
+<img src="card.png" alt="Exportações, importações e saldo de {mes_nome(B.ref)}" width="1200" height="627" style="width:100%;height:auto;border-radius:8px;border:1px solid var(--line)">
+<p class="lede">{resumo_fluxo(B, "export")}</p><p class="lede">{resumo_fluxo(B, "import")}</p></div>
+<div class="tiles">{tile("exp", "Exportações", nf(E / 1e9, 2), "US$ bi", chip(E, E0), "/exportacao/")}{tile("imp", "Importações", nf(I / 1e9, 2), "US$ bi", chip(I, I0), "/importacao/")}{tile("bal", "Saldo", nf(s / 1e9, 2), "US$ bi", f'<span class="chg flat">antes {nf(s0 / 1e9, 2)}</span>')}{tile("", "Corrente de comércio", nf((E + I) / 1e9, 2), "US$ bi", chip(E + I, E0 + I0))}</div>
+<div class="cols"><div class="card"><h2>Exportações que mais subiram</h2>{tabela(B, altas(pe, 2e7)[:5], "produto", E, "dif")}</div>
+<div class="card"><h2>Exportações que mais caíram</h2>{tabela(B, quedas(pe, 2e7)[:5], "produto", E, "dif")}</div></div>
+<div class="cols"><div class="card"><h2>Importações que mais subiram</h2>{tabela(B, altas(pi, 2e7)[:5], "produto", I, "dif")}</div>
+<div class="card"><h2>Importações que mais caíram</h2>{tabela(B, quedas(pi, 2e7)[:5], "produto", I, "dif")}</div></div>
+<div class="cols"><div class="card"><h2>Principais destinos</h2>{tabela(B, B.lista("paises", "export")[:5], "pais", E)}</div>
+<div class="card"><h2>Estados que mais exportaram</h2>{tabela(B, sem_nd(B.lista("estados", "export"))[:5], "estado", E)}</div></div>
+<div class="card"><h2>Compartilhe este resumo</h2><p class="small">Texto pronto para LinkedIn, WhatsApp ou e-mail.</p>
+<textarea id="post" readonly rows="12" style="width:100%;font:inherit;font-size:.9rem;padding:10px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--ink)">{esc(post)}</textarea>
+<button type="button" class="btn ghost" id="copy-post">Copiar texto</button><span class="msg" id="copy-post-msg" aria-live="polite"></span></div>"""
+
+
+def salva_resumo(B) -> dict:
+    RESUMOS.mkdir(parents=True, exist_ok=True)
+    post = texto_post(B)
+    E, E0, I = B.tot("export", B.ref), B.tot("export", B.ant), B.tot("import", B.ref)
+    snap = {
+        "mes": B.ref, "gerado_em": B.d["gerado_em"], "titulo": titulo_mes(B),
+        "descricao": desc_corta(f"Resumo da balança comercial de {mes_nome(B.ref)}: exportações de {us(E)}{var_par(E, E0)}, "
+                                f"importações de {us(I)} e saldo de {us(E - I)}. O que subiu, o que caiu e os principais destinos."),
+        "post": post, "corpo": corpo_resumo(B, post),
+    }
+    arq = RESUMOS / f"{B.ref}.json"
+    if arq.exists():  # mantém a data da primeira publicação do mês (o feed não repete o post)
+        snap["gerado_em"] = json.loads(arq.read_text(encoding="utf-8")).get("gerado_em", snap["gerado_em"])
+    arq.write_text(json.dumps(snap, ensure_ascii=False, indent=0), encoding="utf-8")
+    if gera_card:
+        ano, mes = int(B.ref[:4]), int(B.ref[5:])
+        barras = []
+        for i in range(12, -1, -1):
+            y, m = ano, mes - i
+            while m <= 0:
+                m += 12
+                y -= 1
+            k = f"{y}-{m:02d}"
+            barras.append((MES_CURTO[m - 1], B.tot("export", k), B.tot("import", k)))
+        s, s0 = E - I, E0 - B.tot("import", B.ant)
+        pE, pI = pct(E, E0) or 0, pct(I, B.tot("import", B.ant)) or 0
+        gera_card(RESUMOS / f"{B.ref}.png", f"Balança comercial · {mes_nome(B.ref)}",
+                  [("Exportações (US$)", f"{nf(E / 1e9, 2)} bi", f"{'▲' if pE >= 0 else '▼'} {nf(abs(pE), 1)}%", pE >= 0),
+                   ("Importações (US$)", f"{nf(I / 1e9, 2)} bi", f"{'▲' if pI >= 0 else '▼'} {nf(abs(pI), 1)}%", pI >= 0),
+                   ("Saldo (US$)", f"{nf(s / 1e9, 2)} bi", f"antes: {nf(s0 / 1e9, 2)} bi", None)],
+                  barras, f"Fonte: Comex Stat (Secex/MDIC) · comexemnumeros.com.br/resumo/{B.ref}/")
+    return snap
+
+
+def pgs_resumos(B, urls) -> list[dict]:
+    snaps = sorted((json.loads(f.read_text(encoding="utf-8")) for f in RESUMOS.glob("*.json")), key=lambda x: x["mes"], reverse=True)
+    for sn in snaps:
+        cam = f"/resumo/{sn['mes']}/"
+        png = RESUMOS / f"{sn['mes']}.png"
+        img = None
+        if png.exists():
+            (SAIDA / "resumo" / sn["mes"]).mkdir(parents=True, exist_ok=True)
+            shutil.copy(png, SAIDA / "resumo" / sn["mes"] / "card.png")
+            img = f"{BASE}{cam}card.png"
+        corpo = sn["corpo"] if img else sn["corpo"].replace('<img src="card.png"', '<img hidden src="card.png"')
+        ld = {"@context": "https://schema.org", "@type": "Article", "headline": sn["titulo"], "inLanguage": "pt-BR",
+              "datePublished": sn["gerado_em"], "author": {"@type": "Organization", "name": "Comex em Números", "url": BASE + "/"},
+              "image": img or BASE + "/assets/og.png", "mainEntityOfPage": BASE + cam}
+        escreve(cam, pagina(B, cam, f"{sn['titulo']} | Comex em Números", sn["descricao"], corpo, "/", ld,
+                            migalhas=[("/resumo/", "Resumos mensais"), (None, mes_nome(sn["mes"]))], imagem=img), urls)
+    itens = "".join(f'<li><a href="/resumo/{x["mes"]}/">{cap(mes_nome(x["mes"]))}</a>: {esc(x["titulo"])}</li>' for x in snaps)
+    corpo = (f'<div class="card"><span class="eyebrow">Resumos mensais</span><h1>A balança comercial mês a mês</h1>'
+             f'<p class="lede">Todo mês, quando o MDIC publica os dados, sai aqui um resumo com o que subiu, o que caiu e os principais destinos. '
+             f'Também dá para seguir pelo <a href="/feed.xml">feed RSS</a>.</p><ul class="plain">{itens}</ul></div>')
+    escreve("/resumo/", pagina(B, "/resumo/", "Resumos mensais da balança comercial | Comex em Números",
+                               "Resumo mensal da balança comercial brasileira: exportações, importações, saldo, maiores altas e quedas.",
+                               corpo, "/", migalhas=[(None, "Resumos mensais")]), urls)
+    return snaps
+
+
+def feed_rss(snaps) -> str:
+    itens = []
+    for sn in snaps[:12]:
+        link = f"{BASE}/resumo/{sn['mes']}/"
+        data = format_datetime(dt.datetime.fromisoformat(sn["gerado_em"]))
+        png = RESUMOS / f"{sn['mes']}.png"
+        enc = f'<enclosure url="{link}card.png" type="image/png" length="{png.stat().st_size}"/>' if png.exists() else ""
+        itens.append(f"<item><title>{esc(sn['titulo'])}</title><link>{link}</link><guid isPermaLink=\"true\">{link}</guid>"
+                     f"<pubDate>{data}</pubDate><description><![CDATA[{sn['post']}]]></description>{enc}</item>")
+    return ('<?xml version="1.0" encoding="UTF-8"?>\n<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel>'
+            f'<title>Comex em Números: resumo do mês</title><link>{BASE}/</link>'
+            '<description>Resumo mensal das exportações e importações do Brasil, com dados oficiais do Comex Stat.</description>'
+            f'<language>pt-BR</language><atom:link href="{BASE}/feed.xml" rel="self" type="application/rss+xml"/>'
+            + "".join(itens) + "</channel></rss>")
+
+
 def pg_sobre(B) -> str:
     np_ = sum(1 for p in B.prod.values() if (p.get("export") or {}).get("fob"))
     ni = sum(1 for p in B.prod.values() if (p.get("import") or {}).get("fob"))
@@ -973,7 +1111,7 @@ def main() -> None:
         print("Sem data/dados.json; nada a gerar.")
         return
     B = Base(json.loads(DADOS.read_text(encoding="utf-8")))
-    for pasta in ("produto", "pais", "estado", "exportacao", "importacao", "produtos", "paises", "estados", "sobre", "embed", "assets"):
+    for pasta in ("produto", "pais", "estado", "exportacao", "importacao", "produtos", "paises", "estados", "sobre", "embed", "assets", "resumo"):
         shutil.rmtree(SAIDA / pasta, ignore_errors=True)
     (SAIDA / "assets").mkdir(parents=True, exist_ok=True)
     shutil.copy(SITE / "estilo.css", SAIDA / "assets" / "estilo.css")
@@ -992,6 +1130,9 @@ def main() -> None:
     escreve("/estados/", pg_lista(B, "estado"), urls)
     escreve("/sobre/", pg_sobre(B), urls)
     escreve("/embed/balanca-mensal/", pg_embed(B))
+    salva_resumo(B)
+    snaps = pgs_resumos(B, urls)
+    (SAIDA / "feed.xml").write_text(feed_rss(snaps), encoding="utf-8")
 
     busca = []
     n_prod = 0

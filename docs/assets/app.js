@@ -35,6 +35,12 @@
       fetch("/assets/busca.json").then(function(r){return r.json();}).then(function(j){idx=j;roda();}).catch(function(){out.innerHTML="<p class=\"small\">A busca não carregou. Tente recarregar a página.</p>";});
     });
   }
+  // Copiar texto do resumo
+  var cpp=document.getElementById("copy-post");
+  if(cpp){cpp.addEventListener("click",function(){
+    var t=document.getElementById("post").value,msg=document.getElementById("copy-post-msg");
+    try{navigator.clipboard.writeText(t).then(function(){msg.textContent="Texto copiado.";},function(){msg.textContent="Selecione o texto e copie manualmente.";});}catch(e){msg.textContent="Selecione o texto e copie manualmente.";}
+  });}
   // Copiar código de incorporação
   var cp=document.getElementById("copy-embed");
   if(cp){cp.addEventListener("click",function(){
