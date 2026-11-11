@@ -41,6 +41,55 @@ ARTIGO_UF = {
 }
 
 
+# Artigo dos países mais comuns: "a China", "os Estados Unidos", "Singapura"
+ARTIGO_PAIS = {
+    "China": "a", "Estados Unidos": "os", "Países Baixos (Holanda)": "os", "Argentina": "a", "Índia": "a",
+    "Espanha": "a", "Chile": "o", "Indonésia": "a", "Japão": "o", "Canadá": "o", "México": "o", "Itália": "a",
+    "Tailândia": "a", "França": "a", "Turquia": "a", "Alemanha": "a", "Peru": "o", "Uruguai": "o",
+    "Emirados Árabes Unidos": "os", "Bélgica": "a", "Reino Unido": "o", "Paraguai": "o", "Coreia do Sul": "a",
+    "Irã": "o", "Arábia Saudita": "a", "Egito": "o", "Vietnã": "o", "Malásia": "a", "Colômbia": "a",
+    "Filipinas": "as", "Suíça": "a", "Polônia": "a", "Paquistão": "o", "Noruega": "a", "Argélia": "a",
+    "Panamá": "o", "África do Sul": "a", "Marrocos": "o", "Bolívia": "a", "Nigéria": "a", "Equador": "o",
+    "Rússia": "a", "Jordânia": "a", "Venezuela": "a", "Iraque": "o", "República Dominicana": "a",
+    "Jamaica": "a", "Libéria": "a", "Austrália": "a", "Costa Rica": "a", "Eslovênia": "a", "Líbia": "a",
+    "Grécia": "a", "Guatemala": "a", "Marshall, Ilhas": "as", "Dinamarca": "a", "Suécia": "a", "Finlândia": "a",
+    "Irlanda": "a", "Áustria": "a", "Romênia": "a", "Ucrânia": "a", "Hungria": "a", "Tcheca, República": "a",
+    "Eslováquia": "a", "Bulgária": "a", "Croácia": "a", "Sérvia": "a", "Lituânia": "a", "Letônia": "a",
+    "Estônia": "a", "Nova Zelândia": "a", "Tunísia": "a", "Etiópia": "a", "Quênia": "o", "Tanzânia": "a",
+    "Costa do Marfim": "a", "Mauritânia": "a", "Guiana": "a", "Guiana Francesa": "a", "Bahamas": "as",
+    "Nicarágua": "a", "Bielorrússia": "a", "Geórgia": "a", "Somália": "a", "Síria": "a", "Arménia": "a",
+    "Armênia": "a", "Albânia": "a", "Mongólia": "a", "Coreia do Norte": "a", "Islândia": "a", "Catar": "o",
+    "Kuwait": "o", "Bahrein": "o", "Iêmen": "o", "Líbano": "o", "Sudão": "o", "Senegal": "o", "Camarões": "os",
+    "Gabão": "o", "Congo": "o", "Chade": "o", "Níger": "o", "Mali": "o", "Togo": "o", "Benin": "o",
+    "Malawi": "o", "Zimbábue": "o", "Zâmbia": "a", "Uzbequistão": "o", "Cazaquistão": "o", "Afeganistão": "o",
+    "Nepal": "o", "Sri Lanka": "o", "Camboja": "o", "Laos": "o", "Butão": "o", "Brunei": "o", "Timor-Leste": "o",
+    "Haiti": "o", "Suriname": "o", "Salvador, El": "", "Honduras": "", "Cuba": "", "Portugal": "",
+    "Singapura": "", "Taiwan (Formosa)": "", "Hong Kong": "", "Israel": "", "Angola": "", "Moçambique": "",
+    "Gana": "", "Omã": "", "Bangladesh": "", "Mianmar": "", "Luxemburgo": "o", "Chipre": "", "Malta": "",
+}
+
+
+def art_pais(nome: str) -> str:
+    return ARTIGO_PAIS.get(nome, "")
+
+
+def com_artigo(nome: str, prep: str, art: str) -> str:
+    """prep: 'para' | 'de' | '' ; art: o, a, os, as ou vazio."""
+    if prep == "de":
+        p = {"o": "do", "a": "da", "os": "dos", "as": "das", "": "de"}[art]
+        return f"{p} {nome}"
+    if prep == "para":
+        return f"para {art} {nome}" if art else f"para {nome}"
+    return f"{art} {nome}".strip()
+
+
+def desc_corta(t: str, n: int = 158) -> str:
+    if len(t) <= n:
+        return t
+    t = t[:n].rsplit(" ", 1)[0].rstrip(",;:–-")
+    return t + "…"
+
+
 # ---------------------------------------------------------------- utilidades
 def esc(s) -> str:
     return html.escape(str(s), quote=True)
@@ -123,9 +172,9 @@ def encurta(nome: str) -> str:
     n = nome.split(";")[0]
     n = re.sub(r"\s*\((exceto|excet|incluíd|incluindo|por exemplo)[^)]*\)", "", n, flags=re.I)
     n = re.sub(r"\s+", " ", n).strip()
-    if len(n) > 70:
-        corte = n.rfind(",", 25, 70)
-        n = n[:corte] if corte > 0 else n[:68].rsplit(" ", 1)[0] + "…"
+    if len(n) > 80:
+        corte = n.rfind(",", 20, 80)
+        n = n[:corte] if corte > 0 else n[:78].rsplit(" ", 1)[0].rstrip(",;") + "…"
     return n
 
 
@@ -168,8 +217,23 @@ class Base:
             for r in d["produtos"][fl]:
                 p = self.prod.setdefault(r["codigo"], {"codigo": r["codigo"], "nome": r["nome"], "curto": r["curto"]})
                 p[fl] = r
+        from collections import Counter
+        # Endereços congelados: uma vez publicado, o endereço de um produto não muda
+        # (mesmo que o nome popular seja melhorado depois). Ver site/urls_produtos.json.
+        self.arq_urls = SITE / "urls_produtos.json"
+        self.urls = json.loads(self.arq_urls.read_text(encoding="utf-8")) if self.arq_urls.exists() else {}
+        rep = Counter(p["curto"] for p in self.prod.values())
         for p in self.prod.values():
-            p["url"] = f"/produto/{p['codigo']}-{slug(p['curto'], 50)}/"
+            if rep[p["curto"]] > 1:
+                p["curto"] = f"{p['curto']} (SH4 {p['codigo']})"
+                for fl in ("export", "import"):
+                    if p.get(fl):
+                        p[fl]["curto"] = p["curto"]
+            if p["codigo"] in self.urls:
+                p["url"] = self.urls[p["codigo"]]
+            else:
+                p["url"] = f"/produto/{p['codigo']}-{slug(p['curto'].split(' (SH4')[0], 50)}/"
+                self.urls[p["codigo"]] = p["url"]
         self.pais = self._indice("paises", "/pais/")
         self.uf = {k: v for k, v in self._indice("estados", "/estado/").items() if v["nome"] in ARTIGO_UF}
         # séries mensais desde 2015 (data/serie/*.json)
@@ -445,7 +509,7 @@ def tabela_anual(B, ev, iv, ek=None, saldo=False) -> str:
     linhas = []
     for ano in range(ar, 2014, -1):
         e, i = pe.get(ano, 0), pi.get(ano, 0)
-        if ano == ar:
+        if ano == ar and mr < 12:
             e0, i0 = ytd(B, ev, ano - 1), ytd(B, iv, ano - 1)
             rot = f"{ano}*"
         else:
@@ -461,7 +525,8 @@ def tabela_anual(B, ev, iv, ek=None, saldo=False) -> str:
         cab = '<th>Ano</th><th class="r">Exportação</th><th class="r">Importação</th><th class="r">Saldo</th>'
     else:
         cab = '<th>Ano</th><th class="r">Exportação</th><th class="r">Importação</th>'
-    nota = f'<p class="src">Valores em US$. * {ar}: janeiro a {MESES[mr - 1]}, comparado com o mesmo período de {ar - 1}.</p>'
+    nota = (f'<p class="src">Valores em US$. * {ar}: janeiro a {MESES[mr - 1]}, comparado com o mesmo período de {ar - 1}.</p>'
+            if mr < 12 else '<p class="src">Valores em US$.</p>')
     t = f'<div class="scroll"><table><thead><tr>{cab}</tr></thead><tbody>{"".join(linhas)}</tbody></table></div>{nota}'
     if ek and any(ek):
         pk = por_ano(B, ek)
@@ -470,7 +535,7 @@ def tabela_anual(B, ev, iv, ek=None, saldo=False) -> str:
             kg, val = pk.get(ano, 0), pe.get(ano, 0)
             if not kg:
                 continue
-            lv.append(f'<tr><td>{ano}{"*" if ano == ar else ""}</td><td class="r">{nf(kg / 1e6, 1)}</td><td class="r">{nf(val / kg * 1000, 0)}</td></tr>')
+            lv.append(f'<tr><td>{ano}{"*" if ano == ar and mr < 12 else ""}</td><td class="r">{nf(kg / 1e6, 1)}</td><td class="r">{nf(val / kg * 1000, 0)}</td></tr>')
         if lv:
             t += ('<h3>Volume e preço médio exportados</h3><div class="scroll"><table><thead><tr><th>Ano</th>'
                   '<th class="r">Mil toneladas</th><th class="r">US$ por tonelada</th></tr></thead><tbody>' + "".join(lv) + "</tbody></table></div>")
@@ -487,6 +552,9 @@ def destaque_serie(B, vals, rotulo) -> str:
     melhor = max(completos, key=completos.get)
     atual, ant = ytd(B, vals, ar), ytd(B, vals, ar - 1)
     txt = f"Desde 2015, o melhor ano {rotulo} foi {melhor}, com {us(completos[melhor])}."
+    if ytd(B, vals, ar) > completos[melhor]:
+        txt += f" Em {ar}, até {MESES[int(B.ref[5:]) - 1]}, o valor já soma {us(ytd(B, vals, ar))}: um novo recorde, com meses ainda por vir."
+        return txt
     if ant:
         p = pct(atual, ant)
         txt += (f" Em {ar}, até {MESES[int(B.ref[5:]) - 1]}, o valor soma {us(atual)}, "
@@ -538,6 +606,14 @@ def pagina(B, caminho, titulo, descricao, corpo, ativo="", jsonld=None, migalhas
 <meta property="og:description" content="{esc(descricao)}">
 <meta property="og:url" content="{url}">
 <meta property="og:locale" content="pt_BR">
+<meta property="og:image" content="{BASE}/assets/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#0b7a68">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="/favicon.ico" sizes="any">
+<link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Condensed:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
@@ -625,14 +701,14 @@ def pg_inicio(B) -> str:
 <div class="two"><div class="card"><div class="row-head"><h2>O que mais puxou as exportações</h2><a class="small" href="/exportacao/">Ver todos →</a></div><p class="small">Maiores aumentos em US$ contra {mes_nome(B.ant)}.</p>{tabela(B, altas(ps, 2e7)[:5], "produto", E, "dif")}</div>
 <div class="card"><h2>Exportações por setor</h2>{hbars([r for r in B.d["setores"]["export"] if r["fob"] > 0], "var(--exp)")}</div></div>
 <div class="two"><div class="card"><div class="row-head"><h2>Principais destinos</h2><a class="small" href="/paises/">Todos os países →</a></div>{tabela(B, B.lista("paises", "export")[:6], "pais", E)}</div>
-<div class="card"><div class="row-head"><h2>Estados que mais exportam</h2><a class="small" href="/estados/">Todos →</a></div>{tabela(B, B.lista("estados", "export")[:6], "estado", E)}</div></div>
+<div class="card"><div class="row-head"><h2>Estados que mais exportam</h2><a class="small" href="/estados/">Todos →</a></div>{tabela(B, [r for r in B.lista("estados", "export") if r["nome"] != "UF não declarada"][:6], "estado", E)}</div></div>
 <div class="card"><h3>Jornalista? Use este gráfico na sua matéria</h3><p class="small">Cole o código na sua página. O gráfico se atualiza sozinho todo mês e traz o crédito para o Comex em Números.</p>
 <code class="embed" id="embed-code">&lt;iframe src="{BASE}/embed/balanca-mensal/"
   width="100%" height="360" frameborder="0" loading="lazy"&gt;&lt;/iframe&gt;</code>
 <button type="button" class="btn ghost" id="copy-embed">Copiar código</button><span class="msg" id="copy-msg" aria-live="polite"></span>
 <p class="small"><a href="/embed/balanca-mensal/">Ver como fica o gráfico →</a></p></div>"""
-    desc = (f"Balança comercial do Brasil em {mes_nome(B.ref)}: exportações de {us(E)}{var_par(E, E0)}, "
-            f"importações de {us(I)}{var_par(I, I0)} e saldo de {us(s)}. Dados oficiais do Comex Stat por produto, país e estado.")
+    desc = desc_corta(f"Balança comercial do Brasil em {mes_nome(B.ref)}: exportações de {us(E)}{var_par(E, E0)}, "
+                      f"importações de {us(I)}{var_par(I, I0)} e saldo de {us(s)}. Por produto, país e estado.")
     ld = {"@context": "https://schema.org", "@type": "WebSite", "name": "Comex em Números", "url": BASE + "/",
           "inLanguage": "pt-BR", "description": "Exportações e importações do Brasil por produto, país e estado."}
     return pagina(B, "/", f"Balança comercial do Brasil em {mes_nome(B.ref)} | Comex em Números", desc, c, "/", ld)
@@ -658,12 +734,12 @@ def pg_fluxo(B, fl: str) -> str:
 <p class="small"><a href="/produtos/">Ver a lista completa de produtos →</a></p></div>
 <div class="two"><div class="card"><h2>{"Por setor" if fl == "export" else "Por tipo de bem"}</h2>{hbars(grupos, cor)}</div>
 <div class="card"><div class="row-head"><h2>{"Principais destinos" if fl == "export" else "Principais origens"}</h2><a class="small" href="/paises/">Todos →</a></div>{tabela(B, B.lista("paises", fl)[:8], "pais", tot)}</div></div>
-<div class="card"><div class="row-head"><h2>{"Estados que mais exportam" if fl == "export" else "Estados que mais importam"}</h2><a class="small" href="/estados/">Todos →</a></div>{tabela(B, B.lista("estados", fl)[:8], "estado", tot)}</div>"""
+<div class="card"><div class="row-head"><h2>{"Estados que mais exportam" if fl == "export" else "Estados que mais importam"}</h2><a class="small" href="/estados/">Todos →</a></div>{tabela(B, [r for r in B.lista("estados", fl) if r["nome"] != "UF não declarada"][:8], "estado", tot)}</div>"""
     top3 = ", ".join(minusc(r["curto"]) for r in ps[:3])
-    desc = (f"{nomefl} do Brasil em {mes_nome(B.ref)}: {us(tot)}{var_par(tot, tot0)}. Principais produtos: {top3}. "
-            "Ranking completo, maiores altas e quedas, com dados oficiais do Comex Stat.")
+    desc = desc_corta(f"{nomefl} do Brasil em {mes_nome(B.ref)}: {us(tot)}{var_par(tot, tot0)}. Ranking dos produtos, maiores altas e quedas. "
+                      f"Destaques: {top3}.")
     caminho = "/exportacao/" if fl == "export" else "/importacao/"
-    tit = f'{"Exportações" if fl == "export" else "Importações"} do Brasil em {mes_nome(B.ref)}: produtos, altas e quedas | Comex em Números'
+    tit = f'{"Exportações" if fl == "export" else "Importações"} do Brasil por produto | Comex em Números'
     return pagina(B, caminho, tit, desc, c, caminho, migalhas=[(None, nomefl)])
 
 
@@ -679,7 +755,7 @@ def pg_produtos(B) -> str:
     for p in itens:
         e, i = p.get("export") or {}, p.get("import") or {}
         linhas.append(f'<tr><td><a href="{p["url"]}">{esc(corta(p["curto"]))}</a><span class="s">SH4 {p["codigo"]}</span></td>'
-                      f'<td class="r">{us(e.get("fob", 0))}</td><td class="r">{us(i.get("fob", 0))}</td></tr>')
+                      f'<td class="r">{us(e["fob"]) if e.get("fob") else "—"}</td><td class="r">{us(i["fob"]) if i.get("fob") else "—"}</td></tr>')
     c = f"""<div class="card"><span class="eyebrow">Produtos · {mes_nome(B.ref)}</span><h1>Todos os produtos do comércio exterior</h1>
 <p class="lede">{nf(len(linhas), 0)} produtos (posições SH4) com exportação ou importação, do maior para o menor movimento no mês. Toque em um produto para ver valores, volume, preço médio, destinos e estados.</p>
 <div class="search"><label for="busca" class="small" style="align-self:center">Buscar</label><input id="busca" type="search" placeholder="Ex.: café, soja, aço, medicamentos" autocomplete="off"></div><div id="busca-res" aria-live="polite"></div></div>
@@ -699,7 +775,8 @@ def pg_lista(B, tipo: str) -> str:
               else {"export": "Exportações por estado", "import": "Importações por estado"})[fl]
         blocos.append(f'<div class="card"><h2>{h2}</h2>{tabela(B, [r for r in B.lista(chave, fl) if r["fob"] > 0], tipo, tot)}</div>')
     texto = ("Para quem o Brasil vende e de quem compra. Toque em um país para ver o comércio bilateral e os produtos."
-             if tipo == "pais" else "Quanto cada estado exporta e importa. Toque em um estado para ver os produtos.")
+             if tipo == "pais" else "Quanto cada estado exporta e importa. Toque em um estado para ver os produtos. "
+             "\"UF não declarada\" reúne as operações em que o estado de origem ou destino não foi informado à Receita.")
     c = f'<div class="card"><span class="eyebrow">{tit} · {mes_nome(B.ref)}</span><h1>{tit}</h1><p class="lede">{texto}</p></div><div class="cols">{"".join(blocos)}</div>'
     caminho = "/paises/" if tipo == "pais" else "/estados/"
     desc = (f"Exportações e importações do Brasil por país em {mes_nome(B.ref)}: principais destinos e origens, com variação anual."
@@ -716,12 +793,17 @@ def pg_produto(B, p: dict) -> str:
     if E:
         rank = next((k for k, r in enumerate(B.lista("produtos", "export"), 1) if r["codigo"] == cod), None)
     frases = []
-    if E or E0:
+    if E:
         frases.append(f'O Brasil exportou <strong class="num">{us(E)}</strong> em {esc(minusc(nome))} em {mes_nome(B.ref)}'
                       + (f", {var_txt(E, E0)} sobre um ano antes" if E0 else "") + "."
                       + (f" É o {rank}º produto da pauta de exportação no mês." if rank else ""))
-    if I or I0:
-        frases.append(f'As importações somaram <strong class="num">{us(I)}</strong>{var_par(I, I0)}.')
+    elif E0:
+        frases.append(f"O Brasil não exportou {esc(minusc(nome))} em {mes_nome(B.ref)}. Um ano antes, tinham sido {us(E0)}.")
+    if I:
+        frases.append(f'As importações somaram <strong class="num">{us(I)}</strong>{var_par(I, I0)}.' if E or E0 else
+                      f'O Brasil importou <strong class="num">{us(I)}</strong> em {esc(minusc(nome))} em {mes_nome(B.ref)}{var_par(I, I0)}.')
+    elif I0:
+        frases.append(f"Não houve importação no mês (um ano antes: {us(I0)}).")
     ekg, ekg0 = e.get("kg", 0), e.get("kg_ant", 0)
     tiles = tile("exp", "Exportações", us_sem(E), "US$", chip(E, E0)) + tile("imp", "Importações", us_sem(I), "US$", chip(I, I0))
     tiles += tile("bal", "Saldo", us_sem(E - I), "US$", f'<span class="chg flat">antes {us_sem(E0 - I0)}</span>')
@@ -743,12 +825,19 @@ def pg_produto(B, p: dict) -> str:
     orig = B.cruz("produto_pais", "import", filtro_cod=cod)
     ufe = [r for r in B.cruz("produto_estado", "export", filtro_cod=cod) if not nao_declarado(r["nome"])]
     ufi = [r for r in B.cruz("produto_estado", "import", filtro_cod=cod) if not nao_declarado(r["nome"])]
-    if dest or ufe:
-        secoes.append(f'<div class="cols"><div class="card"><h2>Para onde vai</h2><p class="small">Países que mais compraram {esc(minusc(nome))} do Brasil em {mes_nome(B.ref)}.</p>{tabela(B, dest[:10], "pais", E)}</div>'
-                      f'<div class="card"><h2>Estados que mais exportam</h2>{tabela(B, ufe[:10], "estado", E)}</div></div>')
-    if orig or ufi:
-        secoes.append(f'<div class="cols"><div class="card"><h2>De onde vem</h2><p class="small">Países de onde o Brasil mais importou em {mes_nome(B.ref)}.</p>{tabela(B, orig[:10], "pais", I)}</div>'
-                      f'<div class="card"><h2>Estados que mais importam</h2>{tabela(B, ufi[:10], "estado", I)}</div></div>')
+    def par_cards(a, b):
+        cards = [x for x in (a, b) if x]
+        if not cards:
+            return ""
+        return f'<div class="cols">{"".join(cards)}</div>' if len(cards) == 2 else cards[0]
+    if E:
+        secoes.append(par_cards(
+            f'<div class="card"><h2>Para onde vai</h2><p class="small">Países que mais compraram {esc(minusc(nome))} do Brasil em {mes_nome(B.ref)}.</p>{tabela(B, dest[:10], "pais", E)}</div>' if dest else "",
+            f'<div class="card"><h2>Estados que mais exportam</h2>{tabela(B, ufe[:10], "estado", E)}</div>' if ufe else ""))
+    if I:
+        secoes.append(par_cards(
+            f'<div class="card"><h2>De onde vem</h2><p class="small">Países de onde o Brasil mais importou em {mes_nome(B.ref)}.</p>{tabela(B, orig[:10], "pais", I)}</div>' if orig else "",
+            f'<div class="card"><h2>Estados que mais importam</h2>{tabela(B, ufi[:10], "estado", I)}</div>' if ufi else ""))
     oficial = f'<p class="oficial">Nome oficial (SH4 {esc(cod)}): {esc(p["nome"])}</p>' if p["nome"] != nome else ""
     sev, sek = B.serie_de("produtos", "export", cod)
     siv, _ = B.serie_de("produtos", "import", cod)
@@ -758,13 +847,20 @@ def pg_produto(B, p: dict) -> str:
 <div class="card chart"><div class="row-head"><h2>{cap(mes_nome(B.ref))} contra {mes_nome(B.ant)}</h2>{LEGENDA}</div><div role="img" aria-label="Exportações e importações nos dois meses">{svg_par(B, E0, E, I0, I)}</div>{vol}</div>
 {"".join(secoes)}
 {serie_html}"""
-    t = f"Exportação e importação de {nome} – {mes_nome(B.ref)} | Comex em Números"
-    if E or not I:
-        desc = (f"O Brasil exportou {us(E)} em {minusc(nome)} em {mes_nome(B.ref)}{var_par(E, E0)}. "
-                "Veja destinos, estados, volume e preço médio, com dados oficiais do Comex Stat.")
+    t = f"{cap(nome)}: exportação e importação | Comex em Números"
+    if len(t) > 70:
+        t = f"{corta(cap(nome.split(' (SH4')[0]), 36)} (SH4 {cod}): exportação e importação"
+    nome_d = minusc(nome.split(" (SH4")[0])
+    if not E and not I:
+        desc = (f"{cap(nome_d)}: sem comércio em {mes_curto(B.ref)}. Um ano antes, exportações de {us(E0)} e importações de {us(I0)}. "
+                "Série mensal desde 2015.")
+    elif E:
+        desc = (f"O Brasil exportou {us(E)} em {nome_d} em {mes_curto(B.ref)}{var_par(E, E0)}. "
+                "Destinos, estados, volume, preço e série desde 2015.")
     else:
-        desc = (f"O Brasil importou {us(I)} em {minusc(nome)} em {mes_nome(B.ref)}{var_par(I, I0)}. "
-                "Veja de onde vem e quais estados mais importam, com dados oficiais do Comex Stat.")
+        desc = (f"O Brasil importou {us(I)} em {nome_d} em {mes_curto(B.ref)}{var_par(I, I0)}. "
+                "De onde vem, estados, preço e série desde 2015.")
+    desc = desc_corta(desc)
     ld = {"@context": "https://schema.org", "@type": "Dataset", "name": f"Comércio exterior do Brasil: {nome} (SH4 {cod})",
           "description": desc, "url": BASE + p["url"], "inLanguage": "pt-BR", "temporalCoverage": f"{B.ant}/{B.ref}",
           "isAccessibleForFree": True, "creator": {"@type": "Organization", "name": "Comex em Números", "url": BASE + "/"},
@@ -780,16 +876,18 @@ def pg_lugar(B, tipo: str, it: dict) -> str:
     rank = next((k for k, r in enumerate(B.lista(chave, "export"), 1) if r["nome"] == nome), None) if E else None
     EXP = B.tot("export", B.ref)
     if tipo == "pais":
-        frase = (f'Em {mes_nome(B.ref)}, o Brasil exportou <strong class="num">{us(E)}</strong> para {esc(nome)}{var_par(E, E0)} '
+        ap = art_pais(nome)
+        para, de_p = com_artigo(nome, "para", ap), com_artigo(nome, "de", ap)
+        frase = (f'Em {mes_nome(B.ref)}, o Brasil exportou <strong class="num">{us(E)}</strong> {esc(para)}{var_par(E, E0)} '
                  f'e importou <strong class="num">{us(I)}</strong>{var_par(I, I0)}. O saldo foi de <strong class="num">{us(E - I)}</strong>.')
         if rank:
             frase += f" É o {rank}º maior destino das exportações brasileiras, com {nf(E / EXP * 100, 1)}% do total."
         cz_e = B.cruz("produto_pais", "export", filtro_nome=nome)
         cz_i = B.cruz("produto_pais", "import", filtro_nome=nome)
-        h_e, h_i = f"O que o Brasil vende para {esc(nome)}", f"O que o Brasil compra de {esc(nome)}"
-        t = f"Comércio Brasil–{nome}: exportações e importações em {mes_nome(B.ref)} | Comex em Números"
-        desc = (f"Em {mes_nome(B.ref)}, o Brasil exportou {us(E)} para {nome}{var_par(E, E0)} e importou {us(I)}{var_par(I, I0)}. "
-                "Veja os produtos mais vendidos e comprados, com dados do Comex Stat.")
+        h_e, h_i = f"O que o Brasil vende {esc(para)}", f"O que o Brasil compra {esc(de_p)}"
+        t = f"Comércio Brasil–{nome}: exportações e importações | Comex em Números"
+        desc = desc_corta(f"Em {mes_curto(B.ref)}, o Brasil exportou {us(E)} {para}{var_par(E, E0)} e importou {us(I)}{var_par(I, I0)}. "
+                          "Produtos, saldo e série desde 2015.")
         migalha = ("/paises/", "Países")
     else:
         art = ARTIGO_UF.get(nome, "")
@@ -802,21 +900,20 @@ def pg_lugar(B, tipo: str, it: dict) -> str:
         cz_e = B.cruz("produto_estado", "export", filtro_nome=nome)
         cz_i = B.cruz("produto_estado", "import", filtro_nome=nome)
         h_e, h_i = f"O que {esc(o_nome)} exporta", f"O que {esc(o_nome)} importa"
-        t = f"O que {cap(o_nome)} exporta e importa – {mes_nome(B.ref)} | Comex em Números"
-        desc = (f"Exportações {de} {nome} em {mes_nome(B.ref)}: {us(E)}{var_par(E, E0)}. Importações: {us(I)}{var_par(I, I0)}. "
-                "Veja os principais produtos, com dados oficiais do Comex Stat.")
+        t = f"O que {o_nome} exporta e importa | Comex em Números"
+        desc = desc_corta(f"Exportações {de} {nome} em {mes_curto(B.ref)}: {us(E)}{var_par(E, E0)}. Importações: {us(I)}{var_par(I, I0)}. "
+                          "Principais produtos e série desde 2015.")
         migalha = ("/estados/", "Estados")
     tiles = (tile("exp", "Exportações", us_sem(E), "US$", chip(E, E0)) + tile("imp", "Importações", us_sem(I), "US$", chip(I, I0))
              + tile("bal", "Saldo", us_sem(E - I), "US$", f'<span class="chg flat">antes {us_sem(E0 - I0)}</span>')
              + tile("", "Corrente de comércio", us_sem(E + I), "US$", chip(E + I, E0 + I0)))
     sev, _ = B.serie_de(chave, "export", nome)
     siv, _ = B.serie_de(chave, "import", nome)
-    rot = f"das exportações para {esc(nome)}" if tipo == "pais" else f"das exportações {de} {esc(nome)}"
+    rot = f"das exportações {esc(para)}" if tipo == "pais" else f"das exportações {de} {esc(nome)}"
     serie_html = bloco_serie(B, sev, siv, None, rot)
-    secoes = ""
-    if cz_e or cz_i:
-        secoes = (f'<div class="cols"><div class="card"><h2>{h_e}</h2><p class="small">Principais produtos exportados em {mes_nome(B.ref)}.</p>{tabela(B, cz_e[:15], "produto", E)}</div>'
-                  f'<div class="card"><h2>{h_i}</h2><p class="small">Principais produtos importados em {mes_nome(B.ref)}.</p>{tabela(B, cz_i[:15], "produto", I)}</div></div>')
+    ce = (f'<div class="card"><h2>{h_e}</h2><p class="small">Principais produtos exportados em {mes_nome(B.ref)}.</p>{tabela(B, cz_e[:15], "produto", E)}</div>' if cz_e else "")
+    ci = (f'<div class="card"><h2>{h_i}</h2><p class="small">Principais produtos importados em {mes_nome(B.ref)}.</p>{tabela(B, cz_i[:15], "produto", I)}</div>' if cz_i else "")
+    secoes = f'<div class="cols">{ce}{ci}</div>' if ce and ci else (ce or ci)
     c = f"""<div class="card"><span class="eyebrow">{"País" if tipo == "pais" else "Estado"}</span><h1>{esc(nome)}</h1><p class="lede">{frase}</p></div>
 <div class="tiles">{tiles}</div>
 <div class="card chart"><div class="row-head"><h2>{cap(mes_nome(B.ref))} contra {mes_nome(B.ant)}</h2>{LEGENDA}</div><div role="img" aria-label="Exportações e importações nos dois meses">{svg_par(B, E0, E, I0, I)}</div></div>
@@ -852,7 +949,7 @@ def pg_embed(B) -> str:
 
 def pg_404() -> str:
     return """<!DOCTYPE html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Página não encontrada | Comex em Números</title><meta name="robots" content="noindex"><link rel="stylesheet" href="/assets/estilo.css"></head>
+<title>Página não encontrada | Comex em Números</title><meta name="robots" content="noindex"><link rel="icon" href="/favicon.svg" type="image/svg+xml"><link rel="stylesheet" href="/assets/estilo.css"></head>
 <body><main><div class="card"><h1>Página não encontrada</h1><p>Este endereço não existe ou mudou. <a href="/">Voltar ao início</a> ou <a href="/produtos/">ver todos os produtos</a>.</p></div></main>""" + GOAT + "</body></html>"
 
 
@@ -881,6 +978,10 @@ def main() -> None:
     (SAIDA / "assets").mkdir(parents=True, exist_ok=True)
     shutil.copy(SITE / "estilo.css", SAIDA / "assets" / "estilo.css")
     shutil.copy(SITE / "app.js", SAIDA / "assets" / "app.js")
+    for arq in ("og.png", "apple-touch-icon.png"):
+        shutil.copy(SITE / arq, SAIDA / "assets" / arq)
+    for arq in ("favicon.ico", "favicon.svg"):
+        shutil.copy(SITE / arq, SAIDA / arq)
 
     urls: list[str] = []
     escreve("/", pg_inicio(B), urls)
@@ -906,6 +1007,7 @@ def main() -> None:
     for it in B.uf.values():
         escreve(it["url"], pg_lugar(B, "estado", it), urls)
 
+    B.arq_urls.write_text(json.dumps(dict(sorted(B.urls.items())), ensure_ascii=False, indent=0), encoding="utf-8")
     (SAIDA / "assets" / "busca.json").write_text(json.dumps(busca, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
     hoje = B.d["gerado_em"][:10]
     sm = ['<?xml version="1.0" encoding="UTF-8"?>', '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">']

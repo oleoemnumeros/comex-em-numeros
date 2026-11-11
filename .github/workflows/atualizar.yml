@@ -57,7 +57,7 @@ jobs:
         run: |
           git config user.name "Comex em Números (robô)"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add data docs
+          git add data docs site/urls_produtos.json
           if git diff --cached --quiet; then
             echo "Sem mudanças."
           else
