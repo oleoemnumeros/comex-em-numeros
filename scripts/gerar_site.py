@@ -65,6 +65,7 @@ def main() -> None:
     if DADOS.exists():
         (SAIDA / "dados.json").write_text(dados, encoding="utf-8")
     (SAIDA / ".nojekyll").write_text("", encoding="utf-8")
+    (SAIDA / "CNAME").write_text("comexemnumeros.com.br\n", encoding="utf-8")
     print(f"Site gerado em {SAIDA / 'index.html'} ({len(html) / 1024:.0f} KB)")
 
 
