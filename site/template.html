@@ -172,6 +172,7 @@ function chip(a,b,inv){
   return '<span class="chg '+cls+'">'+(up?"▲ ":"▼ ")+txt+'%</span>';
 }
 function slug(t){return String(t).normalize("NFD").replace(/[̀-ͯ]/g,"").replace(/[^a-zA-Z0-9]+/g,"-").replace(/^-+|-+$/g,"").toLowerCase().slice(0,60)||"item";}
+function minusc(s){return s.charAt(0).toLowerCase()+s.slice(1);}
 function cap(s){return s.charAt(0).toUpperCase()+s.slice(1);}
 function nomeCurto(n,max){n=String(n);max=max||70;return n.length>max?n.slice(0,max-1)+"…":n;}
 
@@ -237,7 +238,7 @@ function tile(cls,lbl,val,unid,chg,href){
 function hbars(rows,cor){
   var mx=Math.max.apply(null,rows.map(function(r){return r.fob;}))||1;
   return '<div class="hbars">'+rows.map(function(r){
-    return '<div class="hbar"><span class="t">'+esc(nomeCurto(r.nome,60))+'</span><span class="v">'+us(r.fob)+'</span><span class="track"><span style="width:'+(r.fob/mx*100)+'%;background:'+cor+'"></span></span><span class="meta">'+chip(r.fob,r.fob_ant)+'<span>antes: '+us(r.fob_ant)+'</span></span></div>';
+    return '<div class="hbar"><span class="t">'+esc(nomeCurto(r.curto||r.nome,60))+'</span><span class="v">'+us(r.fob)+'</span><span class="track"><span style="width:'+(r.fob/mx*100)+'%;background:'+cor+'"></span></span><span class="meta">'+chip(r.fob,r.fob_ant)+'<span>antes: '+us(r.fob_ant)+'</span></span></div>';
   }).join("")+'</div>';
 }
 function hrefItem(tipo,r){return "#"+tipo+"-"+(tipo==="produto"?slug(r.codigo):slug(r.nome));}
@@ -246,7 +247,7 @@ function tabela(rows,tipo,total,modo){
   rows.forEach(function(r,i){
     var sub=modo==="valor"?(total?nf(r.fob/total*100,1)+"% do total":""):(chip(r.fob,r.fob_ant)+" · antes "+us(r.fob_ant));
     var col=modo==="valor"?chip(r.fob,r.fob_ant):'<span class="chg '+(r.fob>=r.fob_ant?"up":"down")+'">'+(r.fob>=r.fob_ant?"+":"")+us(r.fob-r.fob_ant).replace("US$ ","")+'</span>';
-    h+='<tr><td class="n">'+(i+1)+'</td><td><a href="'+hrefItem(tipo,r)+'">'+esc(nomeCurto(r.nome))+'</a><span class="s">'+(tipo==="produto"?"SH4 "+esc(r.codigo)+" · ":"")+sub+'</span></td><td class="r">'+us(r.fob)+'</td><td class="r">'+col+'</td></tr>';
+    h+='<tr><td class="n">'+(i+1)+'</td><td><a href="'+hrefItem(tipo,r)+'">'+esc(nomeCurto(r.curto||r.nome))+'</a><span class="s">'+(tipo==="produto"?"SH4 "+esc(r.codigo)+" · ":"")+sub+'</span></td><td class="r">'+us(r.fob)+'</td><td class="r">'+col+'</td></tr>';
   });
   return h+'</tbody></table></div>';
 }
@@ -259,10 +260,10 @@ function resumoFluxo(fl){
   var lider=dif>=0?a[0]:q[0];
   if(lider&&Math.abs(dif)>0){
     var c=(lider.fob-lider.fob_ant), share=Math.abs(c/dif*100);
-    txt+=' '+(dif>=0?'O maior impulso veio de ':'A maior queda veio de ')+'<strong>'+esc(nomeCurto(lider.nome,60).toLowerCase())+'</strong> ('+(c>=0?'+':'')+us(c)+(share<=150?', '+nf(share,0)+'% da variação total':'')+').';
+    txt+=' '+(dif>=0?'O maior impulso veio de ':'A maior queda veio de ')+'<strong>'+esc(minusc(nomeCurto(lider.curto||lider.nome,60)))+'</strong> ('+(c>=0?'+':'')+us(c)+(share<=150?', '+nf(share,0)+'% da variação total':'')+').';
   }
   var contra=dif>=0?q[0]:a[0];
-  if(contra){txt+=' No sentido contrário, '+(dif>=0?'caiu':'subiu')+' '+esc(nomeCurto(contra.nome,60).toLowerCase())+' ('+(contra.fob-contra.fob_ant>=0?'+':'')+us(contra.fob-contra.fob_ant)+').';}
+  if(contra){txt+=' No sentido contrário, '+(dif>=0?'caiu':'subiu')+' '+esc(minusc(nomeCurto(contra.curto||contra.nome,60)))+' ('+(contra.fob-contra.fob_ant>=0?'+':'')+us(contra.fob-contra.fob_ant)+').';}
   return txt;
 }
 
@@ -305,7 +306,7 @@ function paginaFluxo(fl){
   grupos=grupos.filter(function(r){return r.fob>0;});
   var h='<div class="card"><span class="eyebrow">'+cap(fluxoNome(fl))+' · '+mesNome(REF)+'</span><h1>'+(fl==="export"?"O que o Brasil vendeu":"O que o Brasil comprou")+' em '+MESES[+REF.slice(5)-1]+'</h1><p class="lede">'+resumoFluxo(fl)+'</p></div>';
   var g3=grupos.slice(0,3);
-  h+='<div class="tiles">'+tile(cls,"Total "+(fl==="export"?"exportado":"importado"),bi(tot),"US$ bi",chip(tot,tot0))+g3.map(function(r){return tile("",esc(nomeCurto(r.nome,34)),bi(r.fob),"US$ bi",chip(r.fob,r.fob_ant));}).join("")+'</div>';
+  h+='<div class="tiles">'+tile(cls,"Total "+(fl==="export"?"exportado":"importado"),bi(tot),"US$ bi",chip(tot,tot0))+g3.map(function(r){return tile("",esc(nomeCurto(r.curto||r.nome,34)),bi(r.fob),"US$ bi",chip(r.fob,r.fob_ant));}).join("")+'</div>';
   h+='<div class="card"><div class="row-head"><h2>Produtos</h2><div class="seg" role="group" aria-label="Ordenar produtos"><button type="button" data-m="valor" aria-pressed="true">Maior valor</button><button type="button" data-m="altas" aria-pressed="false">Maiores altas</button><button type="button" data-m="quedas" aria-pressed="false">Maiores quedas</button></div></div><p class="small" id="p-desc"></p><div id="p-tab"></div>'+
      '<div class="search"><label for="busca" class="small" style="align-self:center">Buscar</label><input id="busca" type="search" placeholder="Ex.: café, soja, aço, medicamentos"></div><div id="p-busca"></div></div>';
   h+='<div class="two"><div class="card"><h2>'+(fl==="export"?"Por setor":"Por tipo de bem")+'</h2>'+hbars(grupos,cor)+'</div>'+
@@ -327,7 +328,7 @@ function paginaFluxo(fl){
   document.getElementById("busca").addEventListener("input",function(e){
     var q=slug(e.target.value).replace(/-/g," ").trim(), box=document.getElementById("p-busca");
     if(q.length<2){box.innerHTML="";return;}
-    var rs=ps.filter(function(r){return slug(r.nome).replace(/-/g," ").indexOf(q)>=0||String(r.codigo).indexOf(q)===0;}).slice(0,15);
+    var rs=ps.filter(function(r){return slug((r.curto||"")+" "+r.nome).replace(/-/g," ").indexOf(q)>=0||String(r.codigo).indexOf(q)===0;}).slice(0,15);
     box.innerHTML=rs.length?tabela(rs,"produto",tot,"valor"):'<p class="small">Nenhum produto encontrado.</p>';
   });
 }
@@ -354,10 +355,10 @@ function paginaItem(tipo,s){
   var chave=tipo==="produto"?"produtos":tipo==="pais"?"paises":"estados";
   var it=acha(chave,s,tipo==="produto"), e=it.export, i=it.import;
   if(!e&&!i){app.innerHTML='<div class="card"><h1>Não encontrado</h1><p><a href="#inicio">Voltar ao início</a></p></div>';return;}
-  var nome=(e||i).nome, cod=(e||i).codigo;
+  var nome=(e||i).curto||(e||i).nome, oficial=(e||i).nome, cod=(e||i).codigo;
   var E=e?e.fob:0,E0=e?e.fob_ant:0,I=i?i.fob:0,I0=i?i.fob_ant:0;
   var rotTipo=tipo==="produto"?"Produto · SH4 "+esc(cod):tipo==="pais"?"País":"Estado";
-  var h='<div class="card"><span class="eyebrow">'+rotTipo+'</span><h1>'+esc(nome)+'</h1>';
+  var h='<div class="card"><span class="eyebrow">'+rotTipo+'</span><h1>'+esc(nome)+'</h1>'+(tipo==="produto"&&oficial!==nome?'<p class="small">Nome oficial: '+esc(oficial)+'</p>':'');
   var frases=[];
   if(tipo==="produto"){
     if(E>0||E0>0)frases.push('O Brasil exportou <strong class="num">'+us(E)+'</strong> em '+mesNome(REF)+(E0?', '+(E>=E0?'alta':'queda')+' de '+nf(Math.abs(pct(E,E0)),1)+'% sobre um ano antes':'')+'. É o '+rank(chave,"export",e)+'º produto da pauta de exportação no mês.');
