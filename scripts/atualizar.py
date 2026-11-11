@@ -27,11 +27,13 @@ API = "https://api-comexstat.mdic.gov.br"
 RAIZ = Path(__file__).resolve().parent.parent
 ARQ_DADOS = RAIZ / "data" / "dados.json"
 ARQ_DEBUG = RAIZ / "data" / "debug.json"
+PASTA_SERIE = RAIZ / "data" / "serie"
+ANO_INICIO = 2015
 PAUSA = 4          # segundos entre chamadas
 ESPERA_429 = 12    # segundos após bloqueio por excesso de chamadas
 TENTATIVAS = 6
 UA = "ComexEmNumeros/1.0 (+https://comexemnumeros.com.br)"
-VERSAO = 2  # mude quando o formato de data/dados.json mudar: força nova coleta
+VERSAO = 3  # mude quando o formato de data/dados.json mudar: força nova coleta
 
 MESES_PT = {
     "janeiro": 1, "fevereiro": 2, "março": 3, "marco": 3, "abril": 4,
@@ -246,12 +248,62 @@ def comparar(atual: dict, anterior: dict) -> list[dict]:
     return res
 
 
+def series_historicas(ano_ref: int, mes_ref: int) -> None:
+    """Série mensal por produto, país e estado, um arquivo por ano e fluxo.
+
+    Anos antigos são baixados uma vez só. O ano atual e o anterior são
+    baixados de novo sempre que sai um mês novo (o MDIC revisa os dados).
+    """
+    ref = f"{ano_ref}-{mes_ref:02d}"
+    PASTA_SERIE.mkdir(parents=True, exist_ok=True)
+    for tipo, detalhe in (("produtos", "heading"), ("paises", "country"), ("estados", "state")):
+        for fluxo in ("export", "import"):
+            for ano in range(ANO_INICIO, ano_ref + 1):
+                arq = PASTA_SERIE / f"{tipo}_{fluxo}_{ano}.json"
+                if arq.exists():
+                    try:
+                        atual = json.loads(arq.read_text(encoding="utf-8"))
+                    except ValueError:
+                        atual = {}
+                    recente = ano >= ano_ref - 1
+                    if not recente or atual.get("ate") == ref:
+                        continue
+                fim = ref if ano == ano_ref else f"{ano}-12"
+                try:
+                    ls = consulta(fluxo, f"{ano}-01", fim, [detalhe], True, f"serie_{tipo}")
+                except Exception as e:  # noqa: BLE001
+                    log(f"  ERRO na série {tipo}/{fluxo}/{ano}: {e}")
+                    debug.setdefault("erros", []).append(f"serie {tipo}/{fluxo}/{ano}: {e}")
+                    continue
+                itens: dict[str, dict] = {}
+                for l in ls:
+                    am = mes_da_linha(l)
+                    if not am or am[0] != ano:
+                        continue
+                    nome, cod = rotulo_e_codigo(l, detalhe)
+                    chave = cod if tipo == "produtos" else nome.replace("\xa0", " ").strip()
+                    it = itens.setdefault(chave, {"n": nome.replace("\xa0", " ").strip(), "v": [0] * 12, "k": [0] * 12})
+                    it["v"][am[1] - 1] += round(num(l.get("metricFOB")))
+                    it["k"][am[1] - 1] += round(num(l.get("metricKG")))
+                if tipo != "produtos":
+                    for it in itens.values():
+                        del it["k"]
+                arq.write_text(json.dumps({"ano": ano, "ate": ref, "fluxo": fluxo, "itens": itens},
+                                          ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
+                log(f"  série {tipo}/{fluxo}/{ano}: {len(itens)} itens")
+
+
 def main() -> int:
     forcar = os.environ.get("FORCAR") == "1"
     ano, mes = ultimo_mes()
     ref = f"{ano}-{mes:02d}"
     ant = f"{ano - 1}-{mes:02d}"
     log(f"Último mês disponível no Comex Stat: {ref}")
+
+    # Série histórica (só baixa o que falta ou o que mudou)
+    series_historicas(ano, mes)
+    ARQ_DEBUG.parent.mkdir(parents=True, exist_ok=True)
+    ARQ_DEBUG.write_text(json.dumps(debug, ensure_ascii=False, indent=1), encoding="utf-8")
 
     if ARQ_DADOS.exists() and not forcar:
         atual = json.loads(ARQ_DADOS.read_text(encoding="utf-8"))
@@ -270,7 +322,7 @@ def main() -> int:
 
     # 1) Série mensal (total do Brasil), do início do ano anterior até o mês de referência
     for fluxo in ("export", "import"):
-        ls = consulta(fluxo, f"{ano - 1}-01", ref, [], True, "mensal")
+        ls = consulta(fluxo, f"{ANO_INICIO}-01", ref, [], True, "mensal")
         serie: dict[str, dict] = {}
         for l in ls:
             am = mes_da_linha(l)
