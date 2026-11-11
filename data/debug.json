@@ -1,0 +1,751 @@
+{
+ "consultas": [
+  {
+   "rotulo": "mensal",
+   "fluxo": "export",
+   "periodo": [
+    "2025-01",
+    "2026-10"
+   ],
+   "detalhes": [],
+   "n_linhas": 20,
+   "exemplo": [
+    {
+     "year": "2026",
+     "monthNumber": "10",
+     "metricFOB": "37807241261",
+     "metricKG": "82892104048"
+    },
+    {
+     "year": "2026",
+     "monthNumber": "06",
+     "metricFOB": "35484532688",
+     "metricKG": "82859866659"
+    },
+    {
+     "year": "2026",
+     "monthNumber": "04",
+     "metricFOB": "34283963371",
+     "metricKG": "75021119117"
+    }
+   ]
+  },
+  {
+   "rotulo": "mensal",
+   "fluxo": "import",
+   "periodo": [
+    "2025-01",
+    "2026-10"
+   ],
+   "detalhes": [],
+   "n_linhas": 20,
+   "exemplo": [
+    {
+     "year": "2026",
+     "monthNumber": "10",
+     "metricFOB": "28489685220",
+     "metricKG": "16310359799"
+    },
+    {
+     "year": "2026",
+     "monthNumber": "07",
+     "metricFOB": "27189615488",
+     "metricKG": "16655869902"
+    },
+    {
+     "year": "2026",
+     "monthNumber": "09",
+     "metricFOB": "26692483811",
+     "metricKG": "14663680755"
+    }
+   ]
+  },
+  {
+   "rotulo": "produtos",
+   "fluxo": "export",
+   "periodo": [
+    "2026-10",
+    "2026-10"
+   ],
+   "detalhes": [
+    "heading"
+   ],
+   "n_linhas": 1131,
+   "exemplo": [
+    {
+     "year": "2026",
+     "headingCode": "2709",
+     "heading": "Óleos brutos de petróleo ou de minerais betuminosos",
+     "metricFOB": "8538614829",
+     "metricKG": "14489695396"
+    },
+    {
+     "year": "2026",
+     "headingCode": "1201",
+     "heading": "Soja, mesmo triturada",
+     "metricFOB": "3135867071",
+     "metricKG": "6343993149"
+    },
+    {
+     "year": "2026",
+     "headingCode": "2601",
+     "heading": "Minérios de ferro e seus concentrados, incluídas as pirites de ferro ustuladas (cinzas de pirites)",
+     "metricFOB": "2123975727",
+     "metricKG": "36536762071"
+    }
+   ]
+  },
+  {
+   "rotulo": "produtos",
+   "fluxo": "export",
+   "periodo": [
+    "2025-10",
+    "2025-10"
+   ],
+   "detalhes": [
+    "heading"
+   ],
+   "n_linhas": 1124,
+   "exemplo": [
+    {
+     "year": "2025",
+     "headingCode": "2709",
+     "heading": "Óleos brutos de petróleo ou de minerais betuminosos",
+     "metricFOB": "3836265864",
+     "metricKG": "8896641415"
+    },
+    {
+     "year": "2025",
+     "headingCode": "2601",
+     "heading": "Minérios de ferro e seus concentrados, incluídas as pirites de ferro ustuladas (cinzas de pirites)",
+     "metricFOB": "2933209062",
+     "metricKG": "40112134270"
+    },
+    {
+     "year": "2025",
+     "headingCode": "1201",
+     "heading": "Soja, mesmo triturada",
+     "metricFOB": "2878443682",
+     "metricKG": "6727845137"
+    }
+   ]
+  },
+  {
+   "rotulo": "produtos",
+   "fluxo": "import",
+   "periodo": [
+    "2026-10",
+    "2026-10"
+   ],
+   "detalhes": [
+    "heading"
+   ],
+   "n_linhas": 1147,
+   "exemplo": [
+    {
+     "year": "2026",
+     "headingCode": "2710",
+     "heading": "Óleos de petróleo ou de minerais betuminosos, exceto óleos brutos; preparações não especificadas nem compreendidas noutras posições, contendo, em peso, 70 % ou mais de óleos de petróleo ou de minerais betuminosos, os quais devem constituir o seu elemento",
+     "metricFOB": "3054619028",
+     "metricKG": "2288277954"
+    },
+    {
+     "year": "2026",
+     "headingCode": "8703",
+     "heading": "Automóveis de passageiros e outros veículos automóveis principalmente concebidos para o transporte de pessoas (exceto os da posição 8702), incluídos os veículos de uso misto (station wagons) e os automóveis de corrida",
+     "metricFOB": "1175143913",
+     "metricKG": "106289414"
+    },
+    {
+     "year": "2026",
+     "headingCode": "2709",
+     "heading": "Óleos brutos de petróleo ou de minerais betuminosos",
+     "metricFOB": "971706042",
+     "metricKG": "1114159107"
+    }
+   ]
+  },
+  {
+   "rotulo": "produtos",
+   "fluxo": "import",
+   "periodo": [
+    "2025-10",
+    "2025-10"
+   ],
+   "detalhes": [
+    "heading"
+   ],
+   "n_linhas": 1140,
+   "exemplo": [
+    {
+     "year": "2025",
+     "headingCode": "2710",
+     "heading": "Óleos de petróleo ou de minerais betuminosos, exceto óleos brutos; preparações não especificadas nem compreendidas noutras posições, contendo, em peso, 70 % ou mais de óleos de petróleo ou de minerais betuminosos, os quais devem constituir o seu elemento",
+     "metricFOB": "1466084453",
+     "metricKG": "2193920280"
+    },
+    {
+     "year": "2025",
+     "headingCode": "8411",
+     "heading": "Turborreactores, turbopropulsores e outras turbinas a gás",
+     "metricFOB": "1199340851",
+     "metricKG": "387949"
+    },
+    {
+     "year": "2025",
+     "headingCode": "3102",
+     "heading": "Adubos (fertilizantes) minerais ou químicos, azotados",
+     "metricFOB": "754602915",
+     "metricKG": "2517777691"
+    }
+   ]
+  },
+  {
+   "rotulo": "paises",
+   "fluxo": "export",
+   "periodo": [
+    "2026-10",
+    "2026-10"
+   ],
+   "detalhes": [
+    "country"
+   ],
+   "n_linhas": 219,
+   "exemplo": [
+    {
+     "year": "2026",
+     "country": "China",
+     "metricFOB": "8585933742",
+     "metricKG": "37035726577"
+    },
+    {
+     "year": "2026",
+     "country": "Estados Unidos",
+     "metricFOB": "4316036862",
+     "metricKG": "4537131399"
+    },
+    {
+     "year": "2026",
+     "country": "Países Baixos (Holanda)",
+     "metricFOB": "1811099349",
+     "metricKG": "3280551195"
+    }
+   ]
+  },
+  {
+   "rotulo": "paises",
+   "fluxo": "export",
+   "periodo": [
+    "2025-10",
+    "2025-10"
+   ],
+   "detalhes": [
+    "country"
+   ],
+   "n_linhas": 214,
+   "exemplo": [
+    {
+     "year": "2025",
+     "country": "China",
+     "metricFOB": "9067853985",
+     "metricKG": "42105223048"
+    },
+    {
+     "year": "2025",
+     "country": "Estados Unidos",
+     "metricFOB": "2307462233",
+     "metricKG": "2269798709"
+    },
+    {
+     "year": "2025",
+     "country": "Argentina",
+     "metricFOB": "1639445344",
+     "metricKG": "823960978"
+    }
+   ]
+  },
+  {
+   "rotulo": "paises",
+   "fluxo": "import",
+   "periodo": [
+    "2026-10",
+    "2026-10"
+   ],
+   "detalhes": [
+    "country"
+   ],
+   "n_linhas": 184,
+   "exemplo": [
+    {
+     "year": "2026",
+     "country": "China",
+     "metricFOB": "7528277872",
+     "metricKG": "3225919831"
+    },
+    {
+     "year": "2026",
+     "country": "Estados Unidos",
+     "metricFOB": "5104096394",
+     "metricKG": "3657517271"
+    },
+    {
+     "year": "2026",
+     "country": "Alemanha",
+     "metricFOB": "1346560094",
+     "metricKG": "189896690"
+    }
+   ]
+  },
+  {
+   "rotulo": "paises",
+   "fluxo": "import",
+   "periodo": [
+    "2025-10",
+    "2025-10"
+   ],
+   "detalhes": [
+    "country"
+   ],
+   "n_linhas": 191,
+   "exemplo": [
+    {
+     "year": "2025",
+     "country": "China",
+     "metricFOB": "6427826005",
+     "metricKG": "3399041436"
+    },
+    {
+     "year": "2025",
+     "country": "Estados Unidos",
+     "metricFOB": "3967602576",
+     "metricKG": "3162089460"
+    },
+    {
+     "year": "2025",
+     "country": "Alemanha",
+     "metricFOB": "1250050086",
+     "metricKG": "181385460"
+    }
+   ]
+  },
+  {
+   "rotulo": "estados",
+   "fluxo": "export",
+   "periodo": [
+    "2026-10",
+    "2026-10"
+   ],
+   "detalhes": [
+    "state"
+   ],
+   "n_linhas": 28,
+   "exemplo": [
+    {
+     "year": "2026",
+     "state": "Rio de Janeiro",
+     "metricFOB": "7075817526",
+     "metricKG": "14240539848"
+    },
+    {
+     "year": "2026",
+     "state": "São Paulo",
+     "metricFOB": "6776636622",
+     "metricKG": "5469742096"
+    },
+    {
+     "year": "2026",
+     "state": "Minas Gerais",
+     "metricFOB": "3871423854",
+     "metricKG": "15906197503"
+    }
+   ]
+  },
+  {
+   "rotulo": "estados",
+   "fluxo": "export",
+   "periodo": [
+    "2025-10",
+    "2025-10"
+   ],
+   "detalhes": [
+    "state"
+   ],
+   "n_linhas": 28,
+   "exemplo": [
+    {
+     "year": "2025",
+     "state": "São Paulo",
+     "metricFOB": "6244827888",
+     "metricKG": "5811477237"
+    },
+    {
+     "year": "2025",
+     "state": "Rio de Janeiro",
+     "metricFOB": "4405416567",
+     "metricKG": "11094877447"
+    },
+    {
+     "year": "2025",
+     "state": "Minas Gerais",
+     "metricFOB": "4346689924",
+     "metricKG": "19012451945"
+    }
+   ]
+  },
+  {
+   "rotulo": "estados",
+   "fluxo": "import",
+   "periodo": [
+    "2026-10",
+    "2026-10"
+   ],
+   "detalhes": [
+    "state"
+   ],
+   "n_linhas": 28,
+   "exemplo": [
+    {
+     "year": "2026",
+     "state": "São Paulo",
+     "metricFOB": "8821265502",
+     "metricKG": "2651077419"
+    },
+    {
+     "year": "2026",
+     "state": "Santa Catarina",
+     "metricFOB": "3652192374",
+     "metricKG": "1601448313"
+    },
+    {
+     "year": "2026",
+     "state": "Paraná",
+     "metricFOB": "2584634500",
+     "metricKG": "1809459885"
+    }
+   ]
+  },
+  {
+   "rotulo": "estados",
+   "fluxo": "import",
+   "periodo": [
+    "2025-10",
+    "2025-10"
+   ],
+   "detalhes": [
+    "state"
+   ],
+   "n_linhas": 28,
+   "exemplo": [
+    {
+     "year": "2025",
+     "state": "São Paulo",
+     "metricFOB": "7737834092",
+     "metricKG": "2857892945"
+    },
+    {
+     "year": "2025",
+     "state": "Santa Catarina",
+     "metricFOB": "3139046417",
+     "metricKG": "1621046967"
+    },
+    {
+     "year": "2025",
+     "state": "Rio de Janeiro",
+     "metricFOB": "2790614585",
+     "metricKG": "1201794089"
+    }
+   ]
+  },
+  {
+   "rotulo": "setores",
+   "fluxo": "export",
+   "periodo": [
+    "2026-10",
+    "2026-10"
+   ],
+   "detalhes": [
+    "ISICSection"
+   ],
+   "n_linhas": 4,
+   "exemplo": [
+    {
+     "coIsicSection": "C",
+     "year": "2026",
+     "ISICSection": "Indústria de Transformação",
+     "metricFOB": "18376816284",
+     "metricKG": "16102581200"
+    },
+    {
+     "coIsicSection": "B",
+     "year": "2026",
+     "ISICSection": "Indústria Extrativa",
+     "metricFOB": "11515372584",
+     "metricKG": "52252121780"
+    },
+    {
+     "coIsicSection": "A",
+     "year": "2026",
+     "ISICSection": "Agropecuária",
+     "metricFOB": "7628995427",
+     "metricKG": "14304441786"
+    }
+   ]
+  },
+  {
+   "rotulo": "setores",
+   "fluxo": "export",
+   "periodo": [
+    "2025-10",
+    "2025-10"
+   ],
+   "detalhes": [
+    "ISICSection"
+   ],
+   "n_linhas": 4,
+   "exemplo": [
+    {
+     "coIsicSection": "C",
+     "year": "2025",
+     "ISICSection": "Indústria de Transformação",
+     "metricFOB": "17069795206",
+     "metricKG": "15653980155"
+    },
+    {
+     "coIsicSection": "B",
+     "year": "2025",
+     "ISICSection": "Indústria Extrativa",
+     "metricFOB": "7502433165",
+     "metricKG": "50522608138"
+    },
+    {
+     "coIsicSection": "A",
+     "year": "2025",
+     "ISICSection": "Agropecuária",
+     "metricFOB": "6765536828",
+     "metricKG": "14324300321"
+    }
+   ]
+  },
+  {
+   "rotulo": "setores",
+   "fluxo": "import",
+   "periodo": [
+    "2026-10",
+    "2026-10"
+   ],
+   "detalhes": [
+    "ISICSection"
+   ],
+   "n_linhas": 4,
+   "exemplo": [
+    {
+     "coIsicSection": "C",
+     "year": "2026",
+     "ISICSection": "Indústria de Transformação",
+     "metricFOB": "26159173963",
+     "metricKG": "11882177655"
+    },
+    {
+     "coIsicSection": "B",
+     "year": "2026",
+     "ISICSection": "Indústria Extrativa",
+     "metricFOB": "1623701760",
+     "metricKG": "3330265313"
+    },
+    {
+     "coIsicSection": "A",
+     "year": "2026",
+     "ISICSection": "Agropecuária",
+     "metricFOB": "531892094",
+     "metricKG": "1064884053"
+    }
+   ]
+  },
+  {
+   "rotulo": "setores",
+   "fluxo": "import",
+   "periodo": [
+    "2025-10",
+    "2025-10"
+   ],
+   "detalhes": [
+    "ISICSection"
+   ],
+   "n_linhas": 4,
+   "exemplo": [
+    {
+     "coIsicSection": "C",
+     "year": "2025",
+     "ISICSection": "Indústria de Transformação",
+     "metricFOB": "23124041674",
+     "metricKG": "12373586963"
+    },
+    {
+     "coIsicSection": "B",
+     "year": "2025",
+     "ISICSection": "Indústria Extrativa",
+     "metricFOB": "1072604180",
+     "metricKG": "3919784356"
+    },
+    {
+     "coIsicSection": "A",
+     "year": "2025",
+     "ISICSection": "Agropecuária",
+     "metricFOB": "483252271",
+     "metricKG": "1129615468"
+    }
+   ]
+  },
+  {
+   "rotulo": "categorias",
+   "fluxo": "export",
+   "periodo": [
+    "2026-10",
+    "2026-10"
+   ],
+   "detalhes": [
+    "BECLevel1"
+   ],
+   "n_linhas": 5,
+   "exemplo": [
+    {
+     "year": "2026",
+     "coBECLevel1": "2",
+     "BECLevel1": "BENS INTERMEDIÁRIOS (BI)",
+     "metricFOB": "21185257072",
+     "metricKG": "64222036175"
+    },
+    {
+     "year": "2026",
+     "coBECLevel1": "4",
+     "BECLevel1": "COMBUSTÍVEIS E LUBRIFICANTES",
+     "metricFOB": "10381797571",
+     "metricKG": "16527390822"
+    },
+    {
+     "year": "2026",
+     "coBECLevel1": "3",
+     "BECLevel1": "BENS DE CONSUMO (BC)",
+     "metricFOB": "4509815491",
+     "metricKG": "2024428044"
+    }
+   ]
+  },
+  {
+   "rotulo": "categorias",
+   "fluxo": "export",
+   "periodo": [
+    "2025-10",
+    "2025-10"
+   ],
+   "detalhes": [
+    "BECLevel1"
+   ],
+   "n_linhas": 5,
+   "exemplo": [
+    {
+     "year": "2025",
+     "coBECLevel1": "2",
+     "BECLevel1": "BENS INTERMEDIÁRIOS (BI)",
+     "metricFOB": "19884283037",
+     "metricKG": "68110805444"
+    },
+    {
+     "year": "2025",
+     "coBECLevel1": "3",
+     "BECLevel1": "BENS DE CONSUMO (BC)",
+     "metricFOB": "5202867889",
+     "metricKG": "2289817408"
+    },
+    {
+     "year": "2025",
+     "coBECLevel1": "4",
+     "BECLevel1": "COMBUSTÍVEIS E LUBRIFICANTES",
+     "metricFOB": "4550922472",
+     "metricKG": "10157666086"
+    }
+   ]
+  },
+  {
+   "rotulo": "categorias",
+   "fluxo": "import",
+   "periodo": [
+    "2026-10",
+    "2026-10"
+   ],
+   "detalhes": [
+    "BECLevel1"
+   ],
+   "n_linhas": 5,
+   "exemplo": [
+    {
+     "year": "2026",
+     "coBECLevel1": "2",
+     "BECLevel1": "BENS INTERMEDIÁRIOS (BI)",
+     "metricFOB": "15202846275",
+     "metricKG": "10182374385"
+    },
+    {
+     "year": "2026",
+     "coBECLevel1": "3",
+     "BECLevel1": "BENS DE CONSUMO (BC)",
+     "metricFOB": "5061998069",
+     "metricKG": "769344343"
+    },
+    {
+     "year": "2026",
+     "coBECLevel1": "4",
+     "BECLevel1": "COMBUSTÍVEIS E LUBRIFICANTES",
+     "metricFOB": "4470477757",
+     "metricKG": "5068479100"
+    }
+   ]
+  },
+  {
+   "rotulo": "categorias",
+   "fluxo": "import",
+   "periodo": [
+    "2025-10",
+    "2025-10"
+   ],
+   "detalhes": [
+    "BECLevel1"
+   ],
+   "n_linhas": 5,
+   "exemplo": [
+    {
+     "year": "2025",
+     "coBECLevel1": "2",
+     "BECLevel1": "BENS INTERMEDIÁRIOS (BI)",
+     "metricFOB": "14796277494",
+     "metricKG": "10942799988"
+    },
+    {
+     "year": "2025",
+     "coBECLevel1": "3",
+     "BECLevel1": "BENS DE CONSUMO (BC)",
+     "metricFOB": "4020580345",
+     "metricKG": "610793091"
+    },
+    {
+     "year": "2025",
+     "coBECLevel1": "1",
+     "BECLevel1": "BENS DE CAPITAL (BK)",
+     "metricFOB": "3600690228",
+     "metricKG": "295908455"
+    }
+   ]
+  }
+ ],
+ "dates_updated": {
+  "data": {
+   "updated": "2026-11-06",
+   "year": "2026",
+   "monthNumber": "10"
+  },
+  "success": true,
+  "message": null,
+  "processo_info": null,
+  "language": "pt"
+ }
+}
