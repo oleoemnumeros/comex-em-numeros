@@ -1,0 +1,72 @@
+name: Atualizar dados do Comex Stat
+
+on:
+  # Os dados do mês saem nos primeiros dias úteis; o robô confere todo dia
+  # do dia 1 ao 12 e só baixa quando aparece um mês novo.
+  schedule:
+    - cron: "17 12 1-12 * *"
+  # Botão "Run workflow" na aba Actions
+  workflow_dispatch:
+    inputs:
+      forcar:
+        description: "Baixar de novo mesmo sem mês novo"
+        type: boolean
+        default: true
+  # Roda quando o código do robô ou do site muda
+  push:
+    branches: [main]
+    paths:
+      - "scripts/**"
+      - "site/**"
+      - ".github/workflows/atualizar.yml"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: atualizar
+  cancel-in-progress: false
+
+jobs:
+  atualizar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Instalar dependências
+        run: pip install requests==2.32.3
+
+      - name: Baixar dados da API
+        id: robo
+        continue-on-error: true
+        env:
+          FORCAR: ${{ github.event_name == 'schedule' && '0' || '1' }}
+        run: python scripts/atualizar.py
+
+      - name: Gerar site
+        if: always()
+        run: python scripts/gerar_site.py
+
+      - name: Salvar no repositório
+        if: always()
+        run: |
+          git config user.name "Comex em Números (robô)"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data docs
+          if git diff --cached --quiet; then
+            echo "Sem mudanças."
+          else
+            git commit -m "Dados atualizados: $(date -u +%Y-%m-%d)"
+            git push
+          fi
+
+      - name: Falhar se o robô falhou
+        if: steps.robo.outcome == 'failure'
+        run: |
+          echo "O robô falhou. Veja data/debug.json."
+          exit 1
