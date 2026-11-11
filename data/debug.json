@@ -735,6 +735,318 @@
      "metricKG": "295908455"
     }
    ]
+  },
+  {
+   "rotulo": "produto_pais",
+   "fluxo": "export",
+   "periodo": [
+    "2026-10",
+    "2026-10"
+   ],
+   "detalhes": [
+    "heading",
+    "country"
+   ],
+   "n_linhas": 26928,
+   "exemplo": [
+    {
+     "year": "2026",
+     "headingCode": "2709",
+     "heading": "Óleos brutos de petróleo ou de minerais betuminosos",
+     "country": "China",
+     "metricFOB": "2642366419",
+     "metricKG": "4523769341"
+    },
+    {
+     "year": "2026",
+     "headingCode": "1201",
+     "heading": "Soja, mesmo triturada",
+     "country": "China",
+     "metricFOB": "2205502449",
+     "metricKG": "4448954628"
+    },
+    {
+     "year": "2026",
+     "headingCode": "2709",
+     "heading": "Óleos brutos de petróleo ou de minerais betuminosos",
+     "country": "Estados Unidos",
+     "metricFOB": "1348772021",
+     "metricKG": "2296314028"
+    }
+   ]
+  },
+  {
+   "rotulo": "produto_pais",
+   "fluxo": "export",
+   "periodo": [
+    "2025-10",
+    "2025-10"
+   ],
+   "detalhes": [
+    "heading",
+    "country"
+   ],
+   "n_linhas": 27319,
+   "exemplo": [
+    {
+     "year": "2025",
+     "headingCode": "1201",
+     "heading": "Soja, mesmo triturada",
+     "country": "China",
+     "metricFOB": "2649336440",
+     "metricKG": "6186232450"
+    },
+    {
+     "year": "2025",
+     "headingCode": "2601",
+     "heading": "Minérios de ferro e seus concentrados, incluídas as pirites de ferro ustuladas (cinzas de pirites)",
+     "country": "China",
+     "metricFOB": "1996583828",
+     "metricKG": "28521909830"
+    },
+    {
+     "year": "2025",
+     "headingCode": "2709",
+     "heading": "Óleos brutos de petróleo ou de minerais betuminosos",
+     "country": "China",
+     "metricFOB": "1830102521",
+     "metricKG": "4348235918"
+    }
+   ]
+  },
+  {
+   "rotulo": "produto_pais",
+   "fluxo": "import",
+   "periodo": [
+    "2026-10",
+    "2026-10"
+   ],
+   "detalhes": [
+    "heading",
+    "country"
+   ],
+   "n_linhas": 19269,
+   "exemplo": [
+    {
+     "year": "2026",
+     "headingCode": "2710",
+     "heading": "Óleos de petróleo ou de minerais betuminosos, exceto óleos brutos; preparações não especificadas nem compreendidas noutras posições, contendo, em peso, 70 % ou mais de óleos de petróleo ou de minerais betuminosos, os quais devem constituir o seu elemento",
+     "country": "Estados Unidos",
+     "metricFOB": "2065235719",
+     "metricKG": "1512712384"
+    },
+    {
+     "year": "2026",
+     "headingCode": "8703",
+     "heading": "Automóveis de passageiros e outros veículos automóveis principalmente concebidos para o transporte de pessoas (exceto os da posição 8702), incluídos os veículos de uso misto (station wagons) e os automóveis de corrida",
+     "country": "China",
+     "metricFOB": "739853814",
+     "metricKG": "76248689"
+    },
+    {
+     "year": "2026",
+     "headingCode": "2710",
+     "heading": "Óleos de petróleo ou de minerais betuminosos, exceto óleos brutos; preparações não especificadas nem compreendidas noutras posições, contendo, em peso, 70 % ou mais de óleos de petróleo ou de minerais betuminosos, os quais devem constituir o seu elemento",
+     "country": "Índia",
+     "metricFOB": "431652325",
+     "metricKG": "290628265"
+    }
+   ]
+  },
+  {
+   "rotulo": "produto_pais",
+   "fluxo": "import",
+   "periodo": [
+    "2025-10",
+    "2025-10"
+   ],
+   "detalhes": [
+    "heading",
+    "country"
+   ],
+   "n_linhas": 19505,
+   "exemplo": [
+    {
+     "year": "2025",
+     "headingCode": "8411",
+     "heading": "Turborreactores, turbopropulsores e outras turbinas a gás",
+     "country": "Estados Unidos",
+     "metricFOB": "691805871",
+     "metricKG": "210529"
+    },
+    {
+     "year": "2025",
+     "headingCode": "2710",
+     "heading": "Óleos de petróleo ou de minerais betuminosos, exceto óleos brutos; preparações não especificadas nem compreendidas noutras posições, contendo, em peso, 70 % ou mais de óleos de petróleo ou de minerais betuminosos, os quais devem constituir o seu elemento",
+     "country": "Estados Unidos",
+     "metricFOB": "608218399",
+     "metricKG": "903294322"
+    },
+    {
+     "year": "2025",
+     "headingCode": "8411",
+     "heading": "Turborreactores, turbopropulsores e outras turbinas a gás",
+     "country": "França",
+     "metricFOB": "373313643",
+     "metricKG": "142097"
+    }
+   ]
+  },
+  {
+   "rotulo": "produto_estado",
+   "fluxo": "export",
+   "periodo": [
+    "2026-10",
+    "2026-10"
+   ],
+   "detalhes": [
+    "heading",
+    "state"
+   ],
+   "n_linhas": 8346,
+   "exemplo": [
+    {
+     "year": "2026",
+     "headingCode": "2709",
+     "heading": "Óleos brutos de petróleo ou de minerais betuminosos",
+     "state": "Rio de Janeiro",
+     "metricFOB": "6086016792",
+     "metricKG": "10337183164"
+    },
+    {
+     "year": "2026",
+     "headingCode": "2709",
+     "heading": "Óleos brutos de petróleo ou de minerais betuminosos",
+     "state": "Não Declarada",
+     "metricFOB": "2025079588",
+     "metricKG": "3432632063"
+    },
+    {
+     "year": "2026",
+     "headingCode": "0901",
+     "heading": "Café, mesmo torrado ou descafeinado; cascas e películas de café; sucedâneos do café contendo café em qualquer proporção",
+     "state": "Minas Gerais",
+     "metricFOB": "1149507534",
+     "metricKG": "187198009"
+    }
+   ]
+  },
+  {
+   "rotulo": "produto_estado",
+   "fluxo": "export",
+   "periodo": [
+    "2025-10",
+    "2025-10"
+   ],
+   "detalhes": [
+    "heading",
+    "state"
+   ],
+   "n_linhas": 8367,
+   "exemplo": [
+    {
+     "year": "2025",
+     "headingCode": "2709",
+     "heading": "Óleos brutos de petróleo ou de minerais betuminosos",
+     "state": "Rio de Janeiro",
+     "metricFOB": "3463507406",
+     "metricKG": "7999482151"
+    },
+    {
+     "year": "2025",
+     "headingCode": "2601",
+     "heading": "Minérios de ferro e seus concentrados, incluídas as pirites de ferro ustuladas (cinzas de pirites)",
+     "state": "Pará",
+     "metricFOB": "1226765415",
+     "metricKG": "16586345000"
+    },
+    {
+     "year": "2025",
+     "headingCode": "0901",
+     "heading": "Café, mesmo torrado ou descafeinado; cascas e películas de café; sucedâneos do café contendo café em qualquer proporção",
+     "state": "Minas Gerais",
+     "metricFOB": "1185391989",
+     "metricKG": "168799419"
+    }
+   ]
+  },
+  {
+   "rotulo": "produto_estado",
+   "fluxo": "import",
+   "periodo": [
+    "2026-10",
+    "2026-10"
+   ],
+   "detalhes": [
+    "heading",
+    "state"
+   ],
+   "n_linhas": 11823,
+   "exemplo": [
+    {
+     "year": "2026",
+     "headingCode": "2710",
+     "heading": "Óleos de petróleo ou de minerais betuminosos, exceto óleos brutos; preparações não especificadas nem compreendidas noutras posições, contendo, em peso, 70 % ou mais de óleos de petróleo ou de minerais betuminosos, os quais devem constituir o seu elemento",
+     "state": "São Paulo",
+     "metricFOB": "1031708834",
+     "metricKG": "708704485"
+    },
+    {
+     "year": "2026",
+     "headingCode": "2710",
+     "heading": "Óleos de petróleo ou de minerais betuminosos, exceto óleos brutos; preparações não especificadas nem compreendidas noutras posições, contendo, em peso, 70 % ou mais de óleos de petróleo ou de minerais betuminosos, os quais devem constituir o seu elemento",
+     "state": "Maranhão",
+     "metricFOB": "863113272",
+     "metricKG": "616455489"
+    },
+    {
+     "year": "2026",
+     "headingCode": "8703",
+     "heading": "Automóveis de passageiros e outros veículos automóveis principalmente concebidos para o transporte de pessoas (exceto os da posição 8702), incluídos os veículos de uso misto (station wagons) e os automóveis de corrida",
+     "state": "Paraná",
+     "metricFOB": "585077283",
+     "metricKG": "57252817"
+    }
+   ]
+  },
+  {
+   "rotulo": "produto_estado",
+   "fluxo": "import",
+   "periodo": [
+    "2025-10",
+    "2025-10"
+   ],
+   "detalhes": [
+    "heading",
+    "state"
+   ],
+   "n_linhas": 11590,
+   "exemplo": [
+    {
+     "year": "2025",
+     "headingCode": "8411",
+     "heading": "Turborreactores, turbopropulsores e outras turbinas a gás",
+     "state": "Rio de Janeiro",
+     "metricFOB": "1111161955",
+     "metricKG": "333564"
+    },
+    {
+     "year": "2025",
+     "headingCode": "2710",
+     "heading": "Óleos de petróleo ou de minerais betuminosos, exceto óleos brutos; preparações não especificadas nem compreendidas noutras posições, contendo, em peso, 70 % ou mais de óleos de petróleo ou de minerais betuminosos, os quais devem constituir o seu elemento",
+     "state": "São Paulo",
+     "metricFOB": "583196731",
+     "metricKG": "863628830"
+    },
+    {
+     "year": "2025",
+     "headingCode": "3808",
+     "heading": "Insecticidas, rodenticidas, fungicidas, herbicidas, inibidores de germinação e reguladores de crescimento para plantas, desinfectantes e produtos semelhantes, apresentados em formas ou embalagens para venda a retalho ou como preparações ou ainda sob a for",
+     "state": "São Paulo",
+     "metricFOB": "432874128",
+     "metricKG": "73116800"
+    }
+   ]
   }
  ],
  "dates_updated": {
