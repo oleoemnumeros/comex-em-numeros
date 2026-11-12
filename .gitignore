@@ -1,1 +1,3 @@
 __pycache__/
+# páginas geradas pelo robô a cada execução; publicadas direto pelo Actions
+docs/

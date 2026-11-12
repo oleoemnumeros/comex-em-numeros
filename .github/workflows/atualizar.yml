@@ -22,6 +22,8 @@ on:
 
 permissions:
   contents: write
+  pages: write
+  id-token: write
 
 concurrency:
   group: atualizar
@@ -31,6 +33,10 @@ jobs:
   atualizar:
     runs-on: ubuntu-latest
     timeout-minutes: 90
+    # O site é publicado direto pelo Actions; as páginas (docs/) não ficam no repositório.
+    environment:
+      name: github-pages
+      url: ${{ steps.publicar.outputs.page_url }}
     steps:
       - uses: actions/checkout@v4
 
@@ -57,13 +63,24 @@ jobs:
         run: |
           git config user.name "Comex em Números (robô)"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add data docs site/urls_produtos.json
+          git add data site/urls_produtos.json
           if git diff --cached --quiet; then
             echo "Sem mudanças."
           else
             git commit -m "Dados atualizados: $(date -u +%Y-%m-%d)"
             git push
           fi
+
+      - name: Empacotar site
+        if: always()
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: docs
+
+      - name: Publicar no GitHub Pages
+        id: publicar
+        if: always()
+        uses: actions/deploy-pages@v4
 
       - name: Falhar se o robô falhou
         if: steps.robo.outcome == 'failure'
