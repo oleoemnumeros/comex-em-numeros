@@ -30,6 +30,7 @@ DADOS = RAIZ / "data" / "dados.json"
 RESUMOS = RAIZ / "data" / "resumos"
 SAIDA = RAIZ / "docs"
 DOMINIO = "comexemnumeros.com.br"
+LICENCA = "https://creativecommons.org/licenses/by/4.0/"
 BASE = f"https://{DOMINIO}"
 # Contador de visitas (GoatCounter: sem cookies, não precisa de aviso de LGPD)
 GOAT = '<script data-goatcounter="https://comexemnumeros.goatcounter.com/count" async src="https://gc.zgo.at/count.js"></script>'
@@ -1095,7 +1096,7 @@ def pg_produto(B, p: dict) -> str:
     desc = desc_corta(desc)
     ld = {"@context": "https://schema.org", "@type": "Dataset", "name": f"Comércio exterior do Brasil: {nome} (SH4 {cod})",
           "description": desc, "url": BASE + p["url"], "inLanguage": "pt-BR", "temporalCoverage": f"{B.ant}/{B.ref}",
-          "isAccessibleForFree": True, "creator": {"@type": "Organization", "name": "Comex em Números", "url": BASE + "/"},
+          "isAccessibleForFree": True, "license": LICENCA, "creator": {"@type": "Organization", "name": "Comex em Números", "url": BASE + "/"},
           "isBasedOn": "https://comexstat.mdic.gov.br/"}
     return pagina(B, p["url"], t, desc, c, "/produtos/", ld, migalhas=[("/produtos/", "Produtos"), (None, corta(nome, 40))])
 
@@ -1372,7 +1373,7 @@ def pg_par(B, cod: str, pais: str) -> str:
 {viz}"""
     ld = {"@context": "https://schema.org", "@type": "Dataset", "name": f"{cap(h1)} (SH4 {cod})",
           "description": desc, "url": BASE + url, "inLanguage": "pt-BR", "temporalCoverage": f"2015-01/{B.ref}",
-          "isAccessibleForFree": True, "creator": {"@type": "Organization", "name": "Comex em Números", "url": BASE + "/"},
+          "isAccessibleForFree": True, "license": LICENCA, "creator": {"@type": "Organization", "name": "Comex em Números", "url": BASE + "/"},
           "isBasedOn": "https://comexstat.mdic.gov.br/"}
     return pagina(B, url, t, desc, c, "/produtos/", ld,
                   migalhas=[("/produtos/", "Produtos"), (p["url"], corta(nome, 30)), (None, pais)])
@@ -1545,6 +1546,10 @@ def redirect(destino: str) -> str:
             f'<meta http-equiv="refresh" content="0; url={destino}"></head><body><a href="{destino}">Continuar</a></body></html>')
 
 
+# endereços que mudaram de nome: continuam funcionando
+RENOMEADOS = {"/porto/campos-dos-goytacazes-rj/": "/porto/porto-do-acu-rj/"}
+
+
 # ---------------------------------------------------------------- saída
 def escreve(caminho: str, conteudo: str, urls=None):
     destino = SAIDA / caminho.strip("/") / "index.html" if caminho.endswith("/") else SAIDA / caminho.lstrip("/")
@@ -1594,6 +1599,8 @@ def main() -> None:
         n_prod += 1
     for it in B.pais.values():
         escreve(it["url"], pg_lugar(B, "pais", it), urls)
+    for velho, novo in RENOMEADOS.items():
+        escreve(velho, redirect(novo))
     for (cod, pais) in B.par_url:
         escreve(B.par_url[(cod, pais)], pg_par(B, cod, pais), urls)
     for it in B.uf.values():
