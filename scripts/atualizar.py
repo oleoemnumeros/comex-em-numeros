@@ -360,9 +360,11 @@ PASTA_MUN = RAIZ / "data" / "municipios"
 
 def _mun(l: dict) -> tuple[str, str]:
     """(código IBGE, 'Cidade - UF') de uma linha da rota /cities."""
-    cod = l.get("coMunGeo") or next((str(v) for k, v in l.items() if k.lower().startswith("comun")), "")
     nome = l.get("noMunMinsgUf") or next((str(v) for k, v in l.items() if k.lower().startswith("nomun")), "")
-    return str(cod), str(nome).replace("\xa0", " ").strip()
+    nome = str(nome).replace("\xa0", " ").strip()
+    # a rota /cities não devolve o código IBGE, só "Cidade - UF": o nome é a chave
+    cod = l.get("coMunGeo") or nome
+    return str(cod), nome
 
 
 def municipios(ano_ref: int, mes_ref: int) -> None:
