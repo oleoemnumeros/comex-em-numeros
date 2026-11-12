@@ -155,7 +155,7 @@ def rotulo_e_codigo(l: dict, detalhe: str) -> tuple[str, str]:
     return nome, str(codigo)
 
 
-def consulta(fluxo: str, de: str, ate: str, detalhes: list[str], por_mes: bool, rotulo: str):
+def consulta(fluxo: str, de: str, ate: str, detalhes: list[str], por_mes: bool, rotulo: str, rota: str = "/general"):
     corpo = {
         "flow": fluxo,
         "monthDetail": por_mes,
@@ -165,10 +165,10 @@ def consulta(fluxo: str, de: str, ate: str, detalhes: list[str], por_mes: bool, 
         "metrics": ["metricFOB", "metricKG"],
     }
     log(f"- {rotulo}: {fluxo} {de}..{ate} {detalhes or '[total]'}")
-    resp = chamar("POST", "/general", corpo, params={"language": "pt"})
+    resp = chamar("POST", rota, corpo, params={"language": "pt"})
     ls = linhas(resp)
     debug["consultas"].append({
-        "rotulo": rotulo, "fluxo": fluxo, "periodo": [de, ate], "detalhes": detalhes,
+        "rotulo": rotulo, "rota": rota, "fluxo": fluxo, "periodo": [de, ate], "detalhes": detalhes,
         "n_linhas": len(ls), "exemplo": ls[:3],
     })
     log(f"  {len(ls)} linhas")
@@ -355,6 +355,85 @@ def produto_pais_historico(ano_ref: int, mes_ref: int) -> None:
     # apaga meses que saíram da janela de 13 meses? Não: ficam, e a série mensal cresce com o tempo.
 
 
+PASTA_MUN = RAIZ / "data" / "municipios"
+
+
+def _mun(l: dict) -> tuple[str, str]:
+    """(código IBGE, 'Cidade - UF') de uma linha da rota /cities."""
+    cod = l.get("coMunGeo") or next((str(v) for k, v in l.items() if k.lower().startswith("comun")), "")
+    nome = l.get("noMunMinsgUf") or next((str(v) for k, v in l.items() if k.lower().startswith("nomun")), "")
+    return str(cod), str(nome).replace("\xa0", " ").strip()
+
+
+def municipios(ano_ref: int, mes_ref: int) -> None:
+    """Comércio exterior por município (domicílio fiscal de quem exporta ou importa).
+
+    data/municipios/{fluxo}_{tipo}_{período}.json.gz
+      rank_AAAA-MM: [cod, nome, fob, kg]   prod_AAAA-MM: [cod, sh4, fob, kg]   pais_AAAA-MM: [cod, país, fob]
+      serie_AAAA:   {cod: [fob x 12]}
+    """
+    ref = f"{ano_ref}-{mes_ref:02d}"
+    ant = f"{ano_ref - 1}-{mes_ref:02d}"
+    PASTA_MUN.mkdir(parents=True, exist_ok=True)
+    pedidos = []
+    for ym in (ref, ant):
+        pedidos += [("rank", ym, ym, ["city"], False), ("prod", ym, ym, ["city", "heading"], False),
+                    ("pais", ym, ym, ["city", "country"], False)]
+    for a in range(ANO_INICIO, ano_ref + 1):
+        pedidos.append(("serie", f"{a}", None, ["city"], True))
+    for fluxo in ("export", "import"):
+        for tipo, per, ate, det, por_mes in pedidos:
+            if tipo == "serie":
+                a = int(per)
+                de, ate_ = f"{a}-01", (ref if a == ano_ref else f"{a}-12")
+                recente = a >= ano_ref - 1
+            else:
+                de, ate_ = per, per
+                recente = True
+            arq = PASTA_MUN / f"{fluxo}_{tipo}_{per}.json.gz"
+            if arq.exists():
+                atual = _le_gz(arq)
+                if atual.get("dados") and (not recente or atual.get("ref") == ref) and atual.get("ate") == ate_:
+                    continue
+            try:
+                ls = consulta(fluxo, de, ate_, det, por_mes, f"mun-{tipo}", rota="/cities")
+            except Exception as e:  # noqa: BLE001
+                log(f"  ERRO município {fluxo}/{tipo}_{per}: {e}")
+                debug.setdefault("erros", []).append(f"municipios {fluxo}/{tipo}_{per}: {e}")
+                continue
+            if tipo == "serie":
+                dados: dict = {}
+                for l in ls:
+                    cod, nome = _mun(l)
+                    m = mes_da_linha(l)
+                    if not cod or not m:
+                        continue
+                    v = dados.setdefault(cod, [nome, [0] * 12])
+                    v[1][int(m[1]) - 1] += round(num(l.get("metricFOB")))
+            else:
+                soma: dict = {}
+                for l in ls:
+                    cod, nome = _mun(l)
+                    if tipo == "rank":
+                        k = (cod, nome)
+                    elif tipo == "prod":
+                        k = (cod, rotulo_e_codigo(l, "heading")[1])
+                    else:
+                        k = (cod, str(l.get("country") or "").replace("\xa0", " ").strip())
+                    v = soma.setdefault(k, [0.0, 0.0])
+                    v[0] += num(l.get("metricFOB"))
+                    v[1] += num(l.get("metricKG"))
+                lim = 0 if tipo == "rank" else 1000
+                dados = sorted(([a_, b_, round(f), round(k)] for (a_, b_), (f, k) in soma.items() if f > lim), key=lambda x: -x[2])
+                if tipo == "pais":
+                    dados = [x[:3] for x in dados]
+            if not dados:
+                log(f"  município {fluxo}/{tipo}_{per}: vazio. Exemplo: {ls[:1]}")
+                continue
+            _grava_gz(arq, {"fluxo": fluxo, "de": de, "ate": ate_, "ref": ref, "dados": dados})
+            log(f"  município {fluxo}/{tipo}_{per}: {len(dados)} registros")
+
+
 def main() -> int:
     forcar = os.environ.get("FORCAR") == "1"
     ano, mes = ultimo_mes()
@@ -365,6 +444,7 @@ def main() -> int:
     # Série histórica (só baixa o que falta ou o que mudou)
     series_historicas(ano, mes)
     produto_pais_historico(ano, mes)
+    municipios(ano, mes)
     ARQ_DEBUG.parent.mkdir(parents=True, exist_ok=True)
     ARQ_DEBUG.write_text(json.dumps(debug, ensure_ascii=False, indent=1), encoding="utf-8")
 
