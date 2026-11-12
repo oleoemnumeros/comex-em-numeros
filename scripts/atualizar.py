@@ -33,7 +33,7 @@ PAUSA = 4          # segundos entre chamadas
 ESPERA_429 = 12    # segundos após bloqueio por excesso de chamadas
 TENTATIVAS = 6
 UA = "ComexEmNumeros/1.0 (+https://comexemnumeros.com.br)"
-VERSAO = 4  # mude quando o formato de data/dados.json mudar: força nova coleta
+VERSAO = 5  # mude quando o formato de data/dados.json mudar: força nova coleta
 
 MESES_PT = {
     "janeiro": 1, "fevereiro": 2, "março": 3, "marco": 3, "abril": 4,
@@ -256,7 +256,7 @@ def series_historicas(ano_ref: int, mes_ref: int) -> None:
     """
     ref = f"{ano_ref}-{mes_ref:02d}"
     PASTA_SERIE.mkdir(parents=True, exist_ok=True)
-    for tipo, detalhe in (("produtos", "heading"), ("paises", "country"), ("estados", "state")):
+    for tipo, detalhe in (("produtos", "heading"), ("paises", "country"), ("estados", "state"), ("portos", "urf")):
         for fluxo in ("export", "import"):
             for ano in range(ANO_INICIO, ano_ref + 1):
                 arq = PASTA_SERIE / f"{tipo}_{fluxo}_{ano}.json"
@@ -347,6 +347,8 @@ def main() -> int:
         "estados": "state",
         "setores": "ISICSection",  # Agropecuária, Ind. Extrativa, Ind. de Transformação
         "categorias": "BECLevel1",  # bens de capital, intermediários, consumo, combustíveis
+        "portos": "urf",            # unidade da Receita: porto, aeroporto ou fronteira
+        "vias": "via",              # modal: marítima, aérea, rodoviária...
     }
     for chave, detalhe in recortes.items():
         dados[chave] = {}
@@ -363,7 +365,7 @@ def main() -> int:
     # 3) Cruzamentos: produto x país e produto x estado.
     #    Formato compacto: [código SH4, nome do país/estado, fob atual, fob ano anterior]
     dados["cruzado"] = {}
-    for chave, detalhe in (("produto_pais", "country"), ("produto_estado", "state")):
+    for chave, detalhe in (("produto_pais", "country"), ("produto_estado", "state"), ("produto_porto", "urf")):
         dados["cruzado"][chave] = {}
         for fluxo in ("export", "import"):
             try:
