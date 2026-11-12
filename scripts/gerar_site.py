@@ -265,6 +265,11 @@ def nome_via(raw: str) -> str:
     return VIAS.get(k, raw.strip().capitalize())
 
 
+NOTAS_PORTOS = {
+    "Porto do Açu (RJ)": "Dados da unidade da Receita Federal em Campos dos Goytacazes, responsável pelo Porto do Açu, em São João da Barra.",
+}
+
+
 def pelo(nome: str) -> str:
     """'pelo Porto de Santos (SP)', 'pelo Aeroporto de Guarulhos (SP)', 'por São Luís (MA)'."""
     return ("pelo " if re.match(r"(Porto|Aeroporto) ", nome) else "por ") + nome
@@ -955,7 +960,7 @@ def pg_lista(B, tipo: str) -> str:
                        "\"UF não declarada\" reúne as operações em que o estado de origem ou destino não foi informado à Receita.",
              "porto": "Por onde as mercadorias saem e entram no Brasil: portos, aeroportos e postos de fronteira. Toque em um local "
                       "para ver os produtos. O dado é a unidade da Receita Federal onde a carga foi despachada, que nem sempre é o porto "
-                      "físico de embarque: por Niterói e Campos dos Goytacazes (RJ), por exemplo, passa quase só petróleo."}[tipo]
+                      "físico de embarque: por Niterói (RJ), por exemplo, passa quase só petróleo."}[tipo]
     c = f'<div class="card"><span class="eyebrow">{tit} · {mes_nome(B.ref)}</span><h1>{tit}</h1><p class="lede">{texto}</p></div><div class="cols">{"".join(blocos)}</div>'
     caminho = {"pais": "/paises/", "estado": "/estados/", "porto": "/portos/"}[tipo]
     desc = {"pais": f"Exportações e importações do Brasil por país em {mes_nome(B.ref)}: principais destinos e origens, com variação anual.",
@@ -1088,6 +1093,8 @@ def pg_lugar(B, tipo: str, it: dict) -> str:
         cz_e = B.cruz("produto_porto", "export", filtro_nome=nome)
         cz_i = B.cruz("produto_porto", "import", filtro_nome=nome)
         h_e, h_i = f"O que sai {esc(pelo(nome))}", f"O que entra {esc(pelo(nome))}"
+        if nome in NOTAS_PORTOS:
+            frase += f' <span class="small">{esc(NOTAS_PORTOS[nome])}</span>'
         t = f"{nome}: o que sai e o que entra | Comex em Números"
         desc = desc_corta(f"{nome} em {mes_curto(B.ref)}: "
                           + (junta(f"exportações de {us(E)}{var_par(E, E0)}" if E else "", f"importações de {us(I)}{var_par(I, I0)}" if I else "")
