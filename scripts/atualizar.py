@@ -13,6 +13,7 @@ chamadas e tenta de novo quando é bloqueado.
 from __future__ import annotations
 
 import datetime as dt
+import gzip
 import json
 import os
 import re
@@ -293,6 +294,67 @@ def series_historicas(ano_ref: int, mes_ref: int) -> None:
                 log(f"  série {tipo}/{fluxo}/{ano}: {len(itens)} itens")
 
 
+PASTA_PP = RAIZ / "data" / "prodpais"
+
+
+def _grava_gz(arq: Path, obj: dict) -> None:
+    dado = json.dumps(obj, ensure_ascii=False, separators=(",", ":")).encode("utf-8")
+    arq.write_bytes(gzip.compress(dado, mtime=0))
+
+
+def _le_gz(arq: Path) -> dict:
+    try:
+        return json.loads(gzip.decompress(arq.read_bytes()))
+    except Exception:  # noqa: BLE001
+        return {}
+
+
+def produto_pais_historico(ano_ref: int, mes_ref: int) -> None:
+    """Produto x país: últimos 13 meses (mês a mês), anos fechados desde 2015 e acumulado do ano.
+
+    Arquivos compactados em data/prodpais/. Linhas: [SH4, país, fob, kg].
+    Meses e anos antigos são baixados uma vez só; os recentes, de novo a cada mês novo.
+    """
+    ref = f"{ano_ref}-{mes_ref:02d}"
+    PASTA_PP.mkdir(parents=True, exist_ok=True)
+    pedidos = []  # (arquivo, de, até, rebaixar_se_desatualizado)
+    for i in range(13):
+        a, m = divmod((ano_ref * 12 + mes_ref - 1) - i, 12)
+        ym = f"{a}-{m + 1:02d}"
+        pedidos.append((f"mes_{ym}", ym, ym, i < 3))
+    for a in range(ANO_INICIO, ano_ref):
+        pedidos.append((f"ano_{a}", f"{a}-01", f"{a}-12", a == ano_ref - 1))
+    pedidos.append((f"acum_{ano_ref}", f"{ano_ref}-01", ref, True))
+    pedidos.append((f"acum_{ano_ref - 1}", f"{ano_ref - 1}-01", f"{ano_ref - 1}-{mes_ref:02d}", True))
+    for fluxo in ("export", "import"):
+        for nome, de, ate, recente in pedidos:
+            arq = PASTA_PP / f"{fluxo}_{nome}.json.gz"
+            if arq.exists():
+                atual = _le_gz(arq)
+                if atual.get("linhas") and (not recente or atual.get("ref") == ref) and atual.get("ate") == ate:
+                    continue
+            try:
+                ls = consulta(fluxo, de, ate, ["heading", "country"], False, "prodpais")
+            except Exception as e:  # noqa: BLE001
+                log(f"  ERRO produto x país {fluxo}/{nome}: {e}")
+                debug.setdefault("erros", []).append(f"prodpais {fluxo}/{nome}: {e}")
+                continue
+            soma: dict[tuple, list] = {}
+            for l in ls:
+                _, cod = rotulo_e_codigo(l, "heading")
+                pais = str(l.get("country") or "").replace("\xa0", " ").strip()
+                v = soma.setdefault((cod, pais), [0.0, 0.0])
+                v[0] += num(l.get("metricFOB"))
+                v[1] += num(l.get("metricKG"))
+            linhas_ = sorted(([c, p, round(f), round(k)] for (c, p), (f, k) in soma.items() if f >= 1000), key=lambda x: -x[2])
+            if not linhas_:
+                log(f"  produto x país {fluxo}/{nome}: vazio, não gravei")
+                continue
+            _grava_gz(arq, {"fluxo": fluxo, "de": de, "ate": ate, "ref": ref, "linhas": linhas_})
+            log(f"  produto x país {fluxo}/{nome}: {len(linhas_)} linhas")
+    # apaga meses que saíram da janela de 13 meses? Não: ficam, e a série mensal cresce com o tempo.
+
+
 def main() -> int:
     forcar = os.environ.get("FORCAR") == "1"
     ano, mes = ultimo_mes()
@@ -302,6 +364,7 @@ def main() -> int:
 
     # Série histórica (só baixa o que falta ou o que mudou)
     series_historicas(ano, mes)
+    produto_pais_historico(ano, mes)
     ARQ_DEBUG.parent.mkdir(parents=True, exist_ok=True)
     ARQ_DEBUG.write_text(json.dumps(debug, ensure_ascii=False, indent=1), encoding="utf-8")
 
