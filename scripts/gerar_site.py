@@ -706,6 +706,49 @@ def svg_serie(B, ev, iv) -> str:
     return "".join(o)
 
 
+def svg_preco(B, series, unid) -> str:
+    """Linhas de preço médio mensal desde 2015. series: [(valores ou None, cor)]."""
+    n = len(B.meses)
+    vals_all = [v for vals, _ in series for v in vals if v]
+    if n < 2 or not vals_all:
+        return ""
+    W, H, L, R, T, Bm = 360, 200, 44, 8, 12, 22
+    iw, ih = W - L - R, H - T - Bm
+    mx = max(vals_all)
+    st = passo_bonito(mx)
+    top = st * (int(mx / st) + (0 if mx % st == 0 else 1))
+    def x(i):
+        return L + i / (n - 1) * iw
+    def y(v):
+        return T + ih - v / top * ih
+    o = [f'<svg viewBox="0 0 {W} {H}" xmlns="http://www.w3.org/2000/svg" style="max-width:720px">']
+    g = 0.0
+    while g <= top + 1e-6:
+        o.append(f'<line x1="{L}" x2="{W - R}" y1="{y(g):.1f}" y2="{y(g):.1f}" stroke="var(--line)"/>'
+                 f'<text x="{L - 4}" y="{y(g) + 3.5:.1f}" text-anchor="end" font-size="10">{nf(g, 0) if g < 1e5 else rot_eixo(g).replace(" mi", "")}</text>')
+        g += st
+    for i, m in enumerate(B.meses):
+        if m.endswith("-01") and int(m[:4]) % 2 == 1:
+            o.append(f'<line x1="{x(i):.1f}" x2="{x(i):.1f}" y1="{T + ih}" y2="{T + ih + 3}" stroke="var(--muted)"/>'
+                     f'<text x="{x(i):.1f}" y="{T + ih + 15}" text-anchor="middle" font-size="10">{m[:4]}</text>')
+    for vals, cor in series:
+        seg, ultimo = [], None
+        for i, v in enumerate(vals):
+            if v:
+                seg.append(f"{x(i):.1f},{y(v):.1f}")
+                ultimo = (i, v)
+            elif seg:
+                if len(seg) > 1:
+                    o.append(f'<polyline points="{" ".join(seg)}" fill="none" stroke="{cor}" stroke-width="1.4" stroke-linejoin="round"/>')
+                seg = []
+        if len(seg) > 1:
+            o.append(f'<polyline points="{" ".join(seg)}" fill="none" stroke="{cor}" stroke-width="1.4" stroke-linejoin="round"/>')
+        if ultimo:
+            o.append(f'<circle cx="{x(ultimo[0]):.1f}" cy="{y(ultimo[1]):.1f}" r="2.6" fill="{cor}"/>')
+    o.append(f'<text x="{L}" y="{T - 2}" font-size="10">{unid}</text></svg>')
+    return "".join(o)
+
+
 def svg_13(B, ev, iv, rot_imp=None) -> str:
     """Barras dos últimos 13 meses (exportação e importação), com o mês atual e o
     mesmo mês do ano anterior em destaque."""
@@ -861,12 +904,64 @@ def link_csv(nome_arq: str) -> str:
     return f' <a class="csv" href="dados.csv" download="{esc(nome_arq)}">Baixar dados (CSV)</a>'
 
 
-def bloco_serie(B, ev, iv, ek=None, rotulo="das exportações", url=None) -> str:
+def bloco_preco(B, nome, ev, ek, iv, ik) -> str:
+    """Preço médio mensal (exportação e importação) e quebra valor = volume x preço no acumulado do ano."""
+    def serie_preco(v, k):
+        return [(a / b * 1000) if (b and b >= 1000 and a) else 0 for a, b in zip(v, k)]
+    pe, pi = serie_preco(ev, ek), serie_preco(iv, ik)
+    # só mostra o fluxo com peso relevante em pelo menos 12 meses
+    usa_e = sum(1 for x in pe if x) >= 12
+    usa_i = sum(1 for x in pi if x) >= 12
+    if not (usa_e or usa_i):
+        return ""
+    ref_vals = [x for x in (pe if usa_e else pi) if x]
+    por_kg = (sorted(ref_vals)[len(ref_vals) // 2]) >= 100_000
+    div = 1000 if por_kg else 1
+    unid = "US$/kg" if por_kg else "US$/t"
+    series = []
+    if usa_i:
+        series.append(([x / div for x in pi], "var(--imp)"))
+    if usa_e:
+        series.append(([x / div for x in pe], "var(--exp)"))
+    graf = svg_preco(B, series, unid)
+    # acumulado do ano x mesmo período do ano anterior: quanto veio de volume e quanto de preço
+    ar = int(B.ref[:4])
+    frases = []
+    for fl, v, k, usa in (("export", ev, ek, usa_e), ("import", iv, ik, usa_i)):
+        if not usa:
+            continue
+        V, V0, K, K0 = ytd(B, v, ar), ytd(B, v, ar - 1), ytd(B, k, ar), ytd(B, k, ar - 1)
+        if not (V and V0 and K and K0):
+            continue
+        dv, dk, dp = pct(V, V0), pct(K, K0), pct(V / K, V0 / K0)
+        verbo = "exportado" if fl == "export" else "importado"
+        sv = lambda x: f'{"+" if x >= 0 else "−"}{nf(abs(x), 1)}%'
+        if (dv >= 0) != (dk >= 0) and abs(dk) >= 3:
+            gancho = "valor e volume andaram em sentidos opostos. O volume variou "
+        else:
+            gancho = ""
+        if gancho:
+            frases.append(f"No acumulado de {ar}, o valor {verbo} variou {sv(dv)}, mas {gancho}{sv(dk)} ({toneladas(K)}) "
+                          f"e o preço médio, {sv(dp)}.")
+        else:
+            frases.append(f"No acumulado de {ar}, o valor {verbo} variou {sv(dv)}: o volume, {sv(dk)} ({toneladas(K)}), "
+                          f"e o preço médio, {sv(dp)}.")
+    leg = ('<div class="legend">' + ('<span><i class="sw" style="background:var(--exp)"></i>Exportação</span>' if usa_e else "")
+           + ('<span><i class="sw" style="background:var(--imp)"></i>Importação</span>' if usa_i else "") + "</div>")
+    return (f'<div class="card chart"><h2>Preço médio e volume</h2>'
+            + (f'<p class="small">{" ".join(frases)}</p>' if frases else "")
+            + leg + f'<div role="img" aria-label="Preço médio mensal desde 2015 em {unid}">{graf}</div>'
+            f'<p class="src">Preço médio = valor FOB ÷ peso líquido, mês a mês, em {unid}. Meses com menos de 1 tonelada ficam de fora. '
+            f'Dentro de uma mesma posição SH4 há produtos diferentes, então mudanças de mix também mexem no preço médio.</p></div>')
+
+
+def bloco_serie(B, ev, iv, ek=None, rotulo="das exportações", url=None, ik=None) -> str:
     if not (any(ev) or any(iv)):
         return ""
     csv = ""
     if url:
-        B.csv[url] = csv_texto(B.meses, {"exportacao_us_fob": ev, "importacao_us_fob": iv} | ({"exportacao_kg": ek} if ek else {}))
+        B.csv[url] = csv_texto(B.meses, {"exportacao_us_fob": ev, "importacao_us_fob": iv} | ({"exportacao_kg": ek} if ek else {})
+                               | ({"importacao_kg": ik} if ik else {}))
         csv = link_csv("comexemnumeros-" + url.strip("/").replace("/", "-") + ".csv")
     principal = ev if any(ev) else iv
     rot = rotulo if any(ev) else rotulo.replace("exportações", "importações")
@@ -1018,6 +1113,34 @@ def pg_inicio(B) -> str:
     return pagina(B, "/", f"Balança comercial do Brasil em {mes_nome(B.ref)} | Comex em Números", desc, c, "/", ld)
 
 
+def tabela_volume(B, rows) -> str:
+    h = [f'<div class="scroll"><table><thead><tr><th></th><th>Produto</th><th class="r">Mil t</th><th class="r">Var.</th></tr></thead><tbody>']
+    for i, r in enumerate(rows, 1):
+        p = B.prod.get(r["codigo"], {})
+        nome = p.get("curto") or r["nome"]
+        url = B.url_prod(r["codigo"])
+        pr = preco(r["fob"], r["kg"])
+        sub = f'SH4 {esc(r["codigo"])} · {us(r["fob"])}' + (f" · {pr[1].split('/')[0]} {pr[0]}/{pr[1].split('/')[1]}" if pr else "")
+        h.append(f'<tr><td class="n">{i}</td><td><a href="{url}">{esc(corta(nome))}</a><span class="s">{sub}</span></td>'
+                 f'<td class="r">{nf(r["kg"] / 1e6, 0) if r["kg"] >= 1e7 else nf(r["kg"] / 1e6, 1)}</td><td class="r">{chip(r["kg"], r.get("kg_ant", 0))}</td></tr>')
+    h.append("</tbody></table></div>")
+    return "".join(h)
+
+
+def tabela_preco(B, rows) -> str:
+    h = [f'<div class="scroll"><table><thead><tr><th></th><th>Produto</th><th class="r">Preço</th><th class="r">Var.</th></tr></thead><tbody>']
+    for i, r in enumerate(rows, 1):
+        p = B.prod.get(r["codigo"], {})
+        nome = p.get("curto") or r["nome"]
+        pr, pr0 = preco(r["fob"], r["kg"]), preco(r["fob_ant"], r["kg_ant"])
+        dv = pct(r["kg"], r["kg_ant"])
+        sub = f'{us(r["fob"])} · volume {"+" if dv >= 0 else "−"}{nf(abs(dv), 1)}% · antes {pr0[0] if pr0 else "—"}'
+        h.append(f'<tr><td class="n">{i}</td><td><a href="{B.url_prod(r["codigo"])}">{esc(corta(nome))}</a><span class="s">{sub}</span></td>'
+                 f'<td class="r">{pr[0]}<span class="s">{pr[1]}</span></td><td class="r">{chip(r["fob"] / r["kg"], r["fob_ant"] / r["kg_ant"])}</td></tr>')
+    h.append("</tbody></table></div>")
+    return "".join(h)
+
+
 def pg_fluxo(B, fl: str) -> str:
     tot, tot0 = B.tot(fl, B.ref), B.tot(fl, B.ant)
     ps = B.lista("produtos", fl)
@@ -1030,8 +1153,10 @@ def pg_fluxo(B, fl: str) -> str:
     c = f"""<div class="card"><span class="eyebrow">{nomefl} · {mes_nome(B.ref)}</span><h1>{"O que o Brasil vendeu" if fl == "export" else "O que o Brasil comprou"} em {mes}</h1><p class="lede">{resumo_fluxo(B, fl)}</p></div>
 <div class="tiles">{tiles}</div>
 <div class="card tabgroup" data-tabs><div class="row-head"><h2>Produtos</h2><div class="seg" role="group" aria-label="Ordenar produtos">
-<button type="button" data-t="valor" aria-pressed="true">Maior valor</button><button type="button" data-t="altas" aria-pressed="false">Maiores altas</button><button type="button" data-t="quedas" aria-pressed="false">Maiores quedas</button></div></div>
+<button type="button" data-t="valor" aria-pressed="true">Valor</button><button type="button" data-t="volume" aria-pressed="false">Volume</button><button type="button" data-t="preco" aria-pressed="false">Preço</button><button type="button" data-t="altas" aria-pressed="false">Altas</button><button type="button" data-t="quedas" aria-pressed="false">Quedas</button></div></div>
 <div data-p="valor"><p class="small">Os 20 produtos de maior valor no mês (classificação SH4).</p>{tabela(B, ps[:20], "produto", tot)}</div>
+<div data-p="volume" hidden><p class="small">Os 20 produtos de maior peso no mês, em mil toneladas, com a variação do volume contra {mes_nome(B.ant)}.</p>{tabela_volume(B, sorted([r for r in ps if r.get("kg", 0) > 0], key=lambda r: -r["kg"])[:20])}</div>
+<div data-p="preco" hidden><p class="small">Maiores variações do preço médio (US$ por tonelada ou por quilo) contra {mes_nome(B.ant)}, entre produtos acima de US$ 50 mi e 1 mil toneladas nos dois meses.</p>{tabela_preco(B, sorted([r for r in ps if r["fob"] >= 5e7 and r.get("kg", 0) >= 1e6 and r.get("kg_ant", 0) >= 1e6 and r["fob_ant"] > 0], key=lambda r: -abs(pct(r["fob"] / r["kg"], r["fob_ant"] / r["kg_ant"])))[:20])}</div>
 <div data-p="altas" hidden><p class="small">Maiores aumentos em US$ contra {mes_nome(B.ant)} (produtos acima de US$ 10 mi).</p>{tabela(B, altas(ps)[:20], "produto", tot, "dif")}</div>
 <div data-p="quedas" hidden><p class="small">Maiores quedas em US$ contra {mes_nome(B.ant)} (produtos acima de US$ 10 mi).</p>{tabela(B, quedas(ps)[:20], "produto", tot, "dif")}</div>
 <div class="search"><label for="busca" class="small" style="align-self:center">Buscar</label><input id="busca" type="search" placeholder="Ex.: café, soja, aço, medicamentos" autocomplete="off"></div><div id="busca-res" aria-live="polite"></div>
@@ -1169,11 +1294,13 @@ def pg_produto(B, p: dict) -> str:
         secoes.append(f'<div class="card"><h2>Por onde entra</h2><p class="small">Portos, aeroportos e fronteiras por onde {esc(minusc(nome))} foi importado em {mes_nome(B.ref)}.</p>{tabela(B, psi[:8], "porto", I)}</div>')
     oficial = f'<p class="oficial">Nome oficial (SH4 {esc(cod)}): {esc(p["nome"])}</p>' if p["nome"] != nome else ""
     sev, sek = B.serie_de("produtos", "export", cod)  # noqa: F841
-    siv, _ = B.serie_de("produtos", "import", cod)
-    serie_html = bloco_serie(B, sev, siv, sek, f"das exportações de {esc(minusc(nome))}", url=p["url"])
+    siv, sik = B.serie_de("produtos", "import", cod)
+    serie_html = bloco_serie(B, sev, siv, sek, f"das exportações de {esc(minusc(nome))}", url=p["url"], ik=sik)
+    preco_html = bloco_preco(B, nome, sev, sek, siv, sik)
     c = f"""<div class="card"><span class="eyebrow">Produto · SH4 {esc(cod)}</span><h1>{esc(nome)}</h1>{oficial}<p class="lede">{" ".join(frases)}</p></div>
 <div class="tiles">{tiles}</div>
 {bloco_13(B, sev, siv, E0, E, I0, I, vol)}
+{preco_html}
 {"".join(secoes)}
 {serie_html}"""
     t = f"{cap(nome)}: exportação e importação | Comex em Números"
