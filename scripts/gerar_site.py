@@ -40,6 +40,7 @@ FAMILIA = [
     ("Óleo em Números", "Petróleo e gás", "https://oleoemnumeros.com.br/", "#B45309"),
     ("Comex em Números", "Exportações e importações", "https://comexemnumeros.com.br/", "var(--exp)"),
     ("Voo em Números", "Pontualidade aérea", "https://vooemnumeros.com.br/", "#7C5CE0"),
+    ("Economia em Números", "Macroeconomia", "https://economiaemnumeros.com.br/", "#2A5BC4"),
 ]
 
 
