@@ -1033,7 +1033,7 @@ def pagina(B, caminho, titulo, descricao, corpo, ativo="", jsonld=None, migalhas
 <footer><div>
 <span><strong>Comex em Números</strong> · versão beta</span>
 <span>Fonte: Comex Stat, Secex/MDIC. Valores em US$ FOB. Variações sempre contra o mesmo mês do ano anterior ({mes_nome(B.ant)}). Por estado, vale a UF de origem do produto exportado ou de destino do importado.</span>
-<span><a href="/resumo/">Resumos mensais</a> · <a href="/produtos/">Todos os produtos</a> · <a href="/paises/">Países</a> · <a href="/estados/">Estados</a> · <a href="/municipios/">Municípios</a> · <a href="/portos/">Portos</a> · <a href="/sobre/">Como funciona</a></span>
+<span><a href="/resumo/">Resumos mensais</a> · <a href="/produtos/">Todos os produtos</a> · <a href="/paises/">Países</a> · <a href="/estados/">Estados</a> · <a href="/municipios/">Municípios</a> · <a href="/portos/">Portos</a> · <a href="/sobre/">Como funciona</a> · <a href="/sugestoes/">Sugestões e críticas</a></span>
 </div>{familia_html()}</footer>
 <script src="/assets/app.js?v={v}" defer></script>
 {GOAT}
@@ -1859,6 +1859,64 @@ def feed_rss(snaps) -> str:
             + "".join(itens) + "</channel></rss>")
 
 
+# Sugestões e críticas: a mensagem chega por e-mail via FormSubmit (sem cadastro e sem servidor próprio).
+# Para esconder o e-mail do HTML, troque FORM_EMAIL pelo código aleatório que o FormSubmit envia após a ativação.
+FORM_EMAIL = "oleoemnumeros@gmail.com"
+FORM_JS = """<script>
+(function () {
+  var f = document.getElementById("sug"); if (!f || !window.fetch) return;
+  var msg = document.getElementById("sug-msg"), ok = document.getElementById("enviado"), b = f.querySelector("button");
+  try { var r = document.referrer; if (r && new URL(r).host === location.host && r.indexOf("/sugestoes/") < 0) f.elements.pagina.value = r; } catch (e) {}
+  f.addEventListener("submit", function (ev) {
+    ev.preventDefault();
+    if (f.elements._honey.value) return;
+    b.disabled = true; msg.textContent = "Enviando…";
+    var d = {}; new FormData(f).forEach(function (v, k) { if (k !== "_next") d[k] = v; });
+    fetch("https://formsubmit.co/ajax/__EMAIL__", {method: "POST", headers: {"Content-Type": "application/json", "Accept": "application/json"}, body: JSON.stringify(d)})
+      .then(function (x) { return x.json(); })
+      .then(function (j) {
+        if (j && (j.success === true || j.success === "true")) { ok.className += " on"; f.hidden = true; ok.focus(); }
+        else throw new Error("falhou");
+      })
+      .catch(function () { b.disabled = false; msg.textContent = "Não foi possível enviar agora. Tente de novo em instantes ou escreva para __EMAIL__."; });
+  });
+})();
+</script>"""
+
+
+def form_sugestoes(nome_site: str, base: str) -> str:
+    """Corpo da página /sugestoes/: formulário com envio sem sair da página e alternativa sem JavaScript."""
+    return (
+        '<p class="lede">Viu um erro, sentiu falta de um dado ou tem uma ideia? Escreva aqui. Cada mensagem chega ao e-mail do portal e é lida por uma pessoa.</p>'
+        '<div class="sug-ok" id="enviado" tabindex="-1" role="status"><strong>Mensagem enviada. Obrigado!</strong>'
+        '<p>Lemos todas. Se você deixou um e-mail, a resposta vai para ele.</p></div>'
+        f'<form class="sug" id="sug" method="post" action="https://formsubmit.co/{FORM_EMAIL}">'
+        '<label>Tipo de mensagem<select name="tipo"><option>Sugestão</option><option>Crítica</option>'
+        '<option>Erro em um dado ou página</option><option>Outro assunto</option></select></label>'
+        '<label>Sua mensagem<textarea name="mensagem" required minlength="10" maxlength="3000" rows="6" placeholder="Conte o que você viu, sentiu falta ou sugere. Se for um erro, diga a página e o número."></textarea></label>'
+        '<label><span>Seu nome <span class="opc">(opcional)</span></span><input name="nome" maxlength="80" autocomplete="name"></label>'
+        '<label><span>Seu e-mail, se quiser resposta <span class="opc">(opcional)</span></span><input type="email" name="email" maxlength="120" autocomplete="email"></label>'
+        f'<input type="hidden" name="_subject" value="[{esc(nome_site)}] Sugestão ou crítica">'
+        '<input type="hidden" name="_template" value="table">'
+        f'<input type="hidden" name="_next" value="{base}/sugestoes/#enviado">'
+        f'<input type="hidden" name="site" value="{esc(nome_site)}">'
+        '<input type="hidden" name="pagina" value="">'
+        '<input class="hp" type="text" name="_honey" tabindex="-1" autocomplete="off" aria-hidden="true">'
+        '<button type="submit">Enviar mensagem</button>'
+        '<p class="sug-msg" id="sug-msg" role="status" aria-live="polite"></p></form>'
+        '<p class="small">O envio passa pelo serviço FormSubmit (formsubmit.co), que entrega a mensagem ao e-mail do portal. '
+        'Não pedimos cadastro nem guardamos mais nada além do que você escrever. '
+        f'Se preferir, escreva direto para <a href="mailto:{FORM_EMAIL}">{FORM_EMAIL}</a>.</p>'
+        + FORM_JS.replace("__EMAIL__", FORM_EMAIL))
+
+
+def pg_sugestoes(B) -> str:
+    c = '<div class="card"><span class="eyebrow">Fale com a gente</span><h1>Sugestões e críticas</h1>' + form_sugestoes("Comex em Números", BASE) + "</div>"
+    return pagina(B, "/sugestoes/", "Sugestões e críticas | Comex em Números",
+                  "Envie uma sugestão, crítica ou correção para o Comex em Números. A mensagem chega por e-mail e é lida por uma pessoa.",
+                  c, "/sugestoes/", migalhas=[(None, "Sugestões e críticas")])
+
+
 def pg_sobre(B) -> str:
     np_ = sum(1 for p in B.prod.values() if (p.get("export") or {}).get("fob"))
     ni = sum(1 for p in B.prod.values() if (p.get("import") or {}).get("fob"))
@@ -1933,6 +1991,7 @@ def main() -> None:
     escreve("/paises/", pg_lista(B, "pais"), urls)
     escreve("/estados/", pg_lista(B, "estado"), urls)
     escreve("/sobre/", pg_sobre(B), urls)
+    escreve("/sugestoes/", pg_sugestoes(B), urls)
     escreve("/embed/balanca-mensal/", pg_embed(B))
     salva_resumo(B)
     snaps = pgs_resumos(B, urls)
