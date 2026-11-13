@@ -129,3 +129,6 @@ td:nth-child(2){hyphens:auto;overflow-wrap:anywhere}
 }
 td.r .s{text-align:right}
 td.r .s .chg{margin-top:2px}
+
+.csv{display:inline-block;margin-left:.4em;font-weight:600;white-space:nowrap}
+.csv::before{content:"\2193 ";}

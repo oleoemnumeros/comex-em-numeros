@@ -60,6 +60,17 @@ MESES = ["janeiro", "fevereiro", "março", "abril", "maio", "junho", "julho",
 MES_CURTO = ["jan", "fev", "mar", "abr", "mai", "jun", "jul", "ago", "set", "out", "nov", "dez"]
 
 # Artigo por estado: "a Bahia", "o Pará", "São Paulo"
+UF_SIGLA = {
+    "AC": "Acre", "AL": "Alagoas", "AP": "Amapá", "AM": "Amazonas", "BA": "Bahia", "CE": "Ceará", "DF": "Distrito Federal",
+    "ES": "Espírito Santo", "GO": "Goiás", "MA": "Maranhão", "MT": "Mato Grosso", "MS": "Mato Grosso do Sul",
+    "MG": "Minas Gerais", "PA": "Pará", "PB": "Paraíba", "PR": "Paraná", "PE": "Pernambuco", "PI": "Piauí",
+    "RJ": "Rio de Janeiro", "RN": "Rio Grande do Norte", "RS": "Rio Grande do Sul", "RO": "Rondônia", "RR": "Roraima",
+    "SC": "Santa Catarina", "SP": "São Paulo", "SE": "Sergipe", "TO": "Tocantins",
+}
+# cidades que pedem artigo: "do Rio de Janeiro", "do Recife"
+ARTIGO_CIDADE = {"Rio de Janeiro": "o", "Recife": "o", "Rio Grande": "o", "Guarujá": "o", "Crato": "o",
+                 "Cabo de Santo Agostinho": "o", "Eusébio": "o", "Gama": "o", "Pecém": "o"}
+
 ARTIGO_UF = {
     "Acre": "o", "Alagoas": "", "Amapá": "o", "Amazonas": "o", "Bahia": "a", "Ceará": "o",
     "Distrito Federal": "o", "Espírito Santo": "o", "Goiás": "", "Maranhão": "o",
@@ -286,7 +297,9 @@ def nao_declarado(nome: str) -> bool:
 
 # ---------------------------------------------------------------- dados
 class Base:
+    csv: dict
     def __init__(self, d: dict):
+        self.csv = {}
         self.d = d
         self.ref, self.ant = d["mes"], d["mes_ant"]
         populares = json.loads((SITE / "nomes_populares.json").read_text(encoding="utf-8"))
@@ -356,6 +369,7 @@ class Base:
                                 if "k" in it:
                                     reg["k"][base_i + j] += it["k"][j]
         self.tem_serie = any(self.serie[k] for k in self.serie)
+        self._carrega_municipios()
         # só ganha página o local com movimento relevante nos últimos 12 meses (≥ US$ 10 mi), para evitar páginas vazias
         def mov12(nome):
             return sum(sum(self.serie_de("portos", fl, nome)[0][-12:]) for fl in ("export", "import"))
@@ -396,6 +410,69 @@ class Base:
             tot = max(sum(reg.get(fl, {}).get("mes", {}).get(m, (0, 0))[0] for m in ult12) for fl in ("export", "import"))
             if tot >= 1e7:
                 self.par_url[(cod, pais)] = f'{self.prod[cod]["url"]}{slug(pais)}/'
+
+    def _carrega_municipios(self):
+        """data/municipios: ranking, produtos e países do mês (e de um ano antes) e série mensal desde 2015."""
+        self.mun = {}
+        self.mun_serie = {"export": {}, "import": {}}
+        self.mun_prod = {}
+        self.mun_pais = {}
+        pasta = RAIZ / "data" / "municipios"
+        if not pasta.exists():
+            return
+        ref, ant = self.ref, self.ant
+
+        def le(nome):
+            arq = pasta / nome
+            if not arq.exists():
+                return {}
+            try:
+                return json.loads(gzip.decompress(arq.read_bytes()))
+            except Exception:  # noqa: BLE001
+                return {}
+        idx = {m: k for k, m in enumerate(self.meses)}
+        for fl in ("export", "import"):
+            for a in range(2015, int(ref[:4]) + 1):
+                ob = le(f"{fl}_serie_{a}.json.gz")
+                for chave, (nome, vals) in (ob.get("dados") or {}).items():
+                    arr = self.mun_serie[fl].setdefault(nome, [0] * len(self.meses))
+                    for m, v in enumerate(vals):
+                        k = idx.get(f"{a}-{m + 1:02d}")
+                        if k is not None:
+                            arr[k] = v
+            for per, campo in ((ref, "fob"), (ant, "fob_ant")):
+                for _, nome, fob, kg in le(f"{fl}_rank_{per}.json.gz").get("dados", []):
+                    self._mun_reg(nome).setdefault(fl, {"fob": 0, "fob_ant": 0})[campo] = fob
+                for nome, cod, fob, kg in le(f"{fl}_prod_{per}.json.gz").get("dados", []):
+                    self.mun_prod.setdefault((nome, fl), {}).setdefault(cod, [0, 0])[0 if per == ref else 1] = fob
+                for nome, pais, fob in le(f"{fl}_pais_{per}.json.gz").get("dados", []):
+                    pais = pais.replace("\xa0", " ").strip()
+                    self.mun_pais.setdefault((nome, fl), {}).setdefault(pais, [0, 0])[0 if per == ref else 1] = fob
+        for nome in list(self.mun_serie["export"]) + list(self.mun_serie["import"]):
+            self._mun_reg(nome)
+        # página para quem movimentou ≥ US$ 10 mi em 12 meses
+        for nome, r in list(self.mun.items()):
+            t12 = max(sum(self.mun_serie[fl].get(nome, [0])[-12:]) for fl in ("export", "import"))
+            if t12 < 1e7 or r["uf"] not in UF_SIGLA:
+                r["url"] = ""
+
+    def _mun_reg(self, nome):
+        if nome not in self.mun:
+            cidade, _, uf = nome.rpartition(" - ")
+            cidade = cidade or nome
+            self.mun[nome] = {"nome": nome, "cidade": cidade, "uf": uf.strip(), "rotulo": f"{cidade} ({uf.strip()})",
+                              "url": f"/municipio/{slug(nome)}/"}
+        return self.mun[nome]
+
+    def mun_lista(self, fl, uf=None):
+        out = []
+        for r in self.mun.values():
+            if not r["url"] or (uf and r["uf"] != uf):
+                continue
+            v = r.get(fl) or {}
+            if v.get("fob", 0) > 0:
+                out.append({"codigo": r["nome"], "nome": r["rotulo"], "fob": v["fob"], "fob_ant": v.get("fob_ant", 0), "url": r["url"]})
+        return sorted(out, key=lambda x: -x["fob"])
 
     def url_par(self, cod: str, pais: str) -> str:
         return self.par_url.get((cod, pais), "")
@@ -479,7 +556,7 @@ def tabela(B, rows, tipo, total, modo="valor", urlf=None):
     """tipo: produto | pais | estado | porto. modo: valor | dif. urlf: função que dá o link de cada linha."""
     if not rows:
         return '<p class="small">Sem dados para este recorte.</p>'
-    cab = {"produto": "Produto", "pais": "País", "estado": "Estado", "porto": "Porto ou local"}[tipo]
+    cab = {"produto": "Produto", "pais": "País", "estado": "Estado", "porto": "Porto ou local", "municipio": "Município"}[tipo]
     mes = cap(mes_curto(B.ref))
     h = [f'<div class="scroll"><table><thead><tr><th></th><th>{cab}</th><th class="r">{mes}</th>'
          f'<th class="r">{"Var." if modo == "valor" else "Diferença"}</th></tr></thead><tbody>']
@@ -491,7 +568,7 @@ def tabela(B, rows, tipo, total, modo="valor", urlf=None):
             pre = f"SH4 {esc(r['codigo'])} · "
         else:
             nome = r["nome"]
-            url = B.url_nome(tipo, r["nome"])
+            url = r.get("url") or (B.url_nome(tipo, r["nome"]) if tipo != "municipio" else "")
             pre = ""
         if modo == "valor":
             sub = f"{nf(r['fob'] / total * 100, 1)}% do total" if total else ""
@@ -770,16 +847,34 @@ def destaque_serie(B, vals, rotulo) -> str:
     return txt
 
 
-def bloco_serie(B, ev, iv, ek=None, rotulo="das exportações") -> str:
+def csv_texto(meses, colunas: dict) -> str:
+    """CSV com ';' (abre direto no Excel em português). Pula os meses iniciais sem movimento."""
+    nomes = list(colunas)
+    ini = next((k for k in range(len(meses)) if any(colunas[c][k] for c in nomes)), len(meses))
+    linhas = ["mes;" + ";".join(nomes)]
+    for k in range(ini, len(meses)):
+        linhas.append(meses[k] + ";" + ";".join(str(round(colunas[c][k] or 0)) for c in nomes))
+    return "\ufeff" + "\r\n".join(linhas) + "\r\n"
+
+
+def link_csv(nome_arq: str) -> str:
+    return f' <a class="csv" href="dados.csv" download="{esc(nome_arq)}">Baixar dados (CSV)</a>'
+
+
+def bloco_serie(B, ev, iv, ek=None, rotulo="das exportações", url=None) -> str:
     if not (any(ev) or any(iv)):
         return ""
+    csv = ""
+    if url:
+        B.csv[url] = csv_texto(B.meses, {"exportacao_us_fob": ev, "importacao_us_fob": iv} | ({"exportacao_kg": ek} if ek else {}))
+        csv = link_csv("comexemnumeros-" + url.strip("/").replace("/", "-") + ".csv")
     principal = ev if any(ev) else iv
     rot = rotulo if any(ev) else rotulo.replace("exportações", "importações")
     frase = destaque_serie(B, principal, rot)
     return (f'<div class="card chart"><div class="row-head"><h2>Mês a mês desde 2015</h2>{LEGENDA}</div>'
             + (f'<p>{frase}</p>' if frase else "")
             + f'<div role="img" aria-label="Série mensal de exportações e importações desde 2015">{svg_serie(B, ev, iv)}</div>'
-            + f'<p class="src">Valores mensais em US$ FOB. Último ponto: {mes_nome(B.ref)}.</p></div>'
+            + f'<p class="src">Valores mensais em US$ FOB. Último ponto: {mes_nome(B.ref)}.{csv}</p></div>'
             + f'<div class="card"><h2>Ano a ano</h2>{tabela_anual(B, ev, iv, ek)}</div>')
 
 
@@ -787,7 +882,7 @@ LEGENDA = ('<div class="legend"><span><i style="background:var(--exp)"></i>Expor
            '<span><i style="background:var(--imp)"></i>Importação</span></div>')
 
 NAV = [("/", "Início"), ("/exportacao/", "Exportação"), ("/importacao/", "Importação"),
-       ("/produtos/", "Produtos"), ("/paises/", "Países"), ("/estados/", "Estados"), ("/portos/", "Portos"), ("/sobre/", "Como funciona")]
+       ("/produtos/", "Produtos"), ("/paises/", "Países"), ("/estados/", "Estados"), ("/municipios/", "Municípios"), ("/portos/", "Portos"), ("/sobre/", "Como funciona")]
 
 
 def pagina(B, caminho, titulo, descricao, corpo, ativo="", jsonld=None, migalhas=None, imagem=None) -> str:
@@ -842,7 +937,7 @@ def pagina(B, caminho, titulo, descricao, corpo, ativo="", jsonld=None, migalhas
 <footer><div>
 <span><strong>Comex em Números</strong> · versão beta</span>
 <span>Fonte: Comex Stat, Secex/MDIC. Valores em US$ FOB. Variações sempre contra o mesmo mês do ano anterior ({mes_nome(B.ant)}). Por estado, vale a UF de origem do produto exportado ou de destino do importado.</span>
-<span><a href="/resumo/">Resumos mensais</a> · <a href="/produtos/">Todos os produtos</a> · <a href="/paises/">Países</a> · <a href="/estados/">Estados</a> · <a href="/portos/">Portos</a> · <a href="/sobre/">Como funciona</a></span>
+<span><a href="/resumo/">Resumos mensais</a> · <a href="/produtos/">Todos os produtos</a> · <a href="/paises/">Países</a> · <a href="/estados/">Estados</a> · <a href="/municipios/">Municípios</a> · <a href="/portos/">Portos</a> · <a href="/sobre/">Como funciona</a></span>
 </div>{familia_html()}</footer>
 <script src="/assets/app.js?v={v}" defer></script>
 {GOAT}
@@ -1075,7 +1170,7 @@ def pg_produto(B, p: dict) -> str:
     oficial = f'<p class="oficial">Nome oficial (SH4 {esc(cod)}): {esc(p["nome"])}</p>' if p["nome"] != nome else ""
     sev, sek = B.serie_de("produtos", "export", cod)  # noqa: F841
     siv, _ = B.serie_de("produtos", "import", cod)
-    serie_html = bloco_serie(B, sev, siv, sek, f"das exportações de {esc(minusc(nome))}")
+    serie_html = bloco_serie(B, sev, siv, sek, f"das exportações de {esc(minusc(nome))}", url=p["url"])
     c = f"""<div class="card"><span class="eyebrow">Produto · SH4 {esc(cod)}</span><h1>{esc(nome)}</h1>{oficial}<p class="lede">{" ".join(frases)}</p></div>
 <div class="tiles">{tiles}</div>
 {bloco_13(B, sev, siv, E0, E, I0, I, vol)}
@@ -1166,8 +1261,19 @@ def pg_lugar(B, tipo: str, it: dict) -> str:
     siv, _ = B.serie_de(chave, "import", nome)
     rot = {"pais": lambda: f"das exportações {esc(para)}", "estado": lambda: f"das exportações {de} {esc(nome)}",
            "porto": lambda: f"das exportações {esc(pelo(nome))}"}[tipo]()
-    serie_html = bloco_serie(B, sev, siv, None, rot)
+    serie_html = bloco_serie(B, sev, siv, None, rot, url=it["url"])
     uf_ = (lambda r: B.url_par(r["codigo"], nome)) if tipo == "pais" else None
+    bloco_mun = ""
+    if tipo == "estado":
+        sig = next((k for k, v in UF_SIGLA.items() if v == nome), "")
+        me, mi = B.mun_lista("export", sig), B.mun_lista("import", sig)
+        partes = []
+        if me:
+            partes.append(f'<div class="card"><h2>Municípios que mais exportam</h2>{tabela(B, me[:10], "municipio", E)}</div>')
+        if mi:
+            partes.append(f'<div class="card"><h2>Municípios que mais importam</h2>{tabela(B, mi[:10], "municipio", I)}</div>')
+        bloco_mun = (f'<div class="two" id="municipios">{"".join(partes)}</div>' if len(partes) == 2
+                     else f'<div id="municipios">{"".join(partes)}</div>' if partes else "")
     ce = (f'<div class="card"><h2>{h_e}</h2><p class="small">Principais produtos exportados em {mes_nome(B.ref)}.</p>{tabela(B, cz_e[:15], "produto", E, urlf=uf_)}</div>' if cz_e else "")
     ci = (f'<div class="card"><h2>{h_i}</h2><p class="small">Principais produtos importados em {mes_nome(B.ref)}.</p>{tabela(B, cz_i[:15], "produto", I, urlf=uf_)}</div>' if cz_i else "")
     secoes = f'<div class="cols">{ce}{ci}</div>' if ce and ci else (ce or ci)
@@ -1175,8 +1281,114 @@ def pg_lugar(B, tipo: str, it: dict) -> str:
 <div class="tiles">{tiles}</div>
 {bloco_13(B, sev, siv, E0, E, I0, I)}
 {secoes}
+{bloco_mun}
 {serie_html}"""
     return pagina(B, it["url"], t, desc, c, migalha[0], migalhas=[migalha, (None, nome)])
+
+
+AVISO_MUN = ("O município é o domicílio fiscal da empresa que exportou ou importou, que nem sempre é onde a mercadoria "
+             "foi produzida ou consumida. Exportações de petróleo da Petrobras, por exemplo, aparecem no Rio de Janeiro.")
+
+
+def de_cidade(r) -> str:
+    art = ARTIGO_CIDADE.get(r["cidade"], "")
+    return f"d{art} {r['rotulo']}" if art else f"de {r['rotulo']}"
+
+
+def par_cards(a, b):
+    cards = [x for x in (a, b) if x]
+    if not cards:
+        return ""
+    return f'<div class="cols">{"".join(cards)}</div>' if len(cards) == 2 else cards[0]
+
+
+def pg_municipio(B, r) -> str:
+    nome = r["nome"]
+    e, i = r.get("export") or {}, r.get("import") or {}
+    E, E0, I, I0 = e.get("fob", 0), e.get("fob_ant", 0), i.get("fob", 0), i.get("fob_ant", 0)
+    sev = B.mun_serie["export"].get(nome, [0] * len(B.meses))
+    siv = B.mun_serie["import"].get(nome, [0] * len(B.meses))
+    uf_nome = UF_SIGLA.get(r["uf"], r["uf"])
+    dc = de_cidade(r)
+    rk_br = next((k for k, x in enumerate(B.mun_lista("export"), 1) if x["codigo"] == nome), None) if E else None
+    rk_uf = next((k for k, x in enumerate(B.mun_lista("export", r["uf"]), 1) if x["codigo"] == nome), None) if E else None
+    partes = []
+    if E:
+        partes.append(f'exportaram <strong class="num">{us(E)}</strong>{var_par(E, E0)}')
+    if I:
+        partes.append(f'importaram <strong class="num">{us(I)}</strong>{var_par(I, I0)}')
+    if partes:
+        frase = f"Em {mes_nome(B.ref)}, empresas {esc(dc)} " + junta(*partes) + "."
+    else:
+        frase = f"Em {mes_nome(B.ref)}, não houve exportação nem importação registrada por empresas {esc(dc)}."
+    if rk_br and rk_uf:
+        o_uf = {"o": "do", "a": "da", "os": "dos", "as": "das"}.get(ARTIGO_UF.get(uf_nome, ""), "de")
+        frase += f" É o {rk_br}º município que mais exportou no Brasil e o {rk_uf}º {o_uf} {esc(uf_nome)}."
+    tiles = (tile("exp", "Exportações", us_sem(E), "US$", chip(E, E0)) + tile("imp", "Importações", us_sem(I), "US$", chip(I, I0))
+             + tile("bal", "Saldo", us_sem(E - I), "US$", f'<span class="chg flat">antes {us_sem(E0 - I0)}</span>')
+             + tile("", "Corrente de comércio", us_sem(E + I), "US$", chip(E + I, E0 + I0)))
+
+    def linhas_prod(fl):
+        d = B.mun_prod.get((nome, fl), {})
+        out = [{"codigo": c, "nome": (B.prod.get(c) or {}).get("curto", c), "fob": a, "fob_ant": b} for c, (a, b) in d.items() if a > 0]
+        return sorted(out, key=lambda x: -x["fob"])
+
+    def linhas_pais(fl):
+        d = B.mun_pais.get((nome, fl), {})
+        out = [{"codigo": "", "nome": pa, "fob": a, "fob_ant": b} for pa, (a, b) in d.items() if a > 0 and not nao_declarado(pa)]
+        return sorted(out, key=lambda x: -x["fob"])
+    pe, pi, ce, ci = linhas_prod("export"), linhas_prod("import"), linhas_pais("export"), linhas_pais("import")
+    blocos = []
+    if pe or ce:
+        blocos.append(par_cards(
+            f'<div class="card"><h2>O que exporta</h2><p class="small">Produtos exportados por empresas {esc(dc)} em {mes_nome(B.ref)}.</p>{tabela(B, pe[:12], "produto", E)}</div>' if pe else "",
+            f'<div class="card"><h2>Para onde vende</h2>{tabela(B, ce[:10], "pais", E)}</div>' if ce else ""))
+    if pi or ci:
+        blocos.append(par_cards(
+            f'<div class="card"><h2>O que importa</h2><p class="small">Produtos importados por empresas {esc(dc)} em {mes_nome(B.ref)}.</p>{tabela(B, pi[:12], "produto", I)}</div>' if pi else "",
+            f'<div class="card"><h2>De onde compra</h2>{tabela(B, ci[:10], "pais", I)}</div>' if ci else ""))
+    vizinhos = [x for x in B.mun_lista("export", r["uf"]) if x["codigo"] != nome][:8]
+    url_uf = B.url_nome("estado", uf_nome)
+    viz = (f'<div class="card"><div class="row-head"><h2>Outros municípios {"do" if ARTIGO_UF.get(uf_nome) == "o" else "da" if ARTIGO_UF.get(uf_nome) == "a" else "de"} {esc(uf_nome)}</h2>'
+           + (f'<a class="small" href="{url_uf}">Ver estado →</a>' if url_uf else "") + f'</div>{tabela(B, vizinhos, "municipio", 0)}</div>') if vizinhos else ""
+    serie_html = bloco_serie(B, sev, siv, None, f"das exportações {esc(dc)}", url=r["url"])
+    c = f"""<div class="card"><span class="eyebrow">Município · {esc(uf_nome)}</span><h1>{esc(r["rotulo"])}</h1><p class="lede">{frase}</p>
+<p class="small">{AVISO_MUN}</p></div>
+<div class="tiles">{tiles}</div>
+{bloco_13(B, sev, siv, E0, E, I0, I)}
+{"".join(blocos)}
+{serie_html}
+{viz}"""
+    t = f"Exportações e importações {dc} | Comex em Números"
+    if len(t) > 75:
+        t = f"Comércio exterior {dc}"
+    desc = desc_corta(f"{r['rotulo']} em {mes_curto(B.ref)}: "
+                      + (junta(f"exportações de {us(E)}{var_par(E, E0)}" if E else "", f"importações de {us(I)}{var_par(I, I0)}" if I else "")
+                         or "sem comércio exterior") + ". Produtos, países e série desde 2015.")
+    ld = {"@context": "https://schema.org", "@type": "Dataset", "name": f"Comércio exterior {dc}", "description": desc,
+          "url": BASE + r["url"], "inLanguage": "pt-BR", "temporalCoverage": f"2015-01/{B.ref}", "isAccessibleForFree": True,
+          "license": LICENCA, "creator": {"@type": "Organization", "name": "Comex em Números", "url": BASE + "/"},
+          "isBasedOn": "https://comexstat.mdic.gov.br/"}
+    mig = [("/municipios/", "Municípios")] + ([(url_uf, uf_nome)] if url_uf else []) + [(None, r["rotulo"])]
+    return pagina(B, r["url"], t, desc, c, "/municipios/", ld, migalhas=mig)
+
+
+def pg_municipios(B) -> str:
+    blocos = []
+    for fl in ("export", "import"):
+        tot = B.tot(fl, B.ref)
+        lst = B.mun_lista(fl)
+        h2 = "Municípios que mais exportam" if fl == "export" else "Municípios que mais importam"
+        blocos.append(f'<div class="card"><h2>{h2}</h2>{tabela(B, lst[:100], "municipio", tot)}</div>')
+    por_uf = " · ".join(f'<a href="{B.url_nome("estado", n)}#municipios">{s_}</a>' for s_, n in sorted(UF_SIGLA.items()) if B.url_nome("estado", n))
+    n_pag = sum(1 for r in B.mun.values() if r["url"])
+    c = f"""<div class="card"><span class="eyebrow">Ranking · {cap(mes_nome(B.ref))}</span><h1>Exportações e importações por município</h1>
+<p class="lede">Os municípios brasileiros que mais exportaram e importaram em {mes_nome(B.ref)}. Toque em um município para ver produtos, países e a série desde 2015. São {nf(n_pag, 0)} municípios com página própria (pelo menos US$ 10 milhões em 12 meses).</p>
+<p class="small">{AVISO_MUN}</p><p class="small">Por estado: {por_uf}</p></div>
+<div class="cols">{"".join(blocos)}</div>"""
+    desc = f"Ranking dos municípios que mais exportam e importam no Brasil em {mes_nome(B.ref)}, com produtos, países e série desde 2015."
+    return pagina(B, "/municipios/", "Exportações por município: ranking do Brasil | Comex em Números", desc, c, "/municipios/",
+                  migalhas=[(None, "Municípios")])
 
 
 def preco(v: float, kg: float):
@@ -1323,6 +1535,15 @@ def pg_par(B, cod: str, pais: str) -> str:
            f'<th class="r">{"Toneladas" if por_kg else "Mil t"}</th><th class="r">{"US$/kg" if por_kg else "US$/t"}</th>')
     nota = (f'<p class="src">Valores em US$ FOB. * {ar}: janeiro a {MESES[mr - 1]}, comparado com o mesmo período de {ar - 1}.</p>'
             if mr < 12 else '<p class="src">Valores em US$ FOB.</p>')
+    lin_csv = ["ano;exportacao_us_fob;exportacao_kg;importacao_us_fob;importacao_kg"]
+    for a in anos:
+        e_, i_ = ano_de("export", a), ano_de("import", a)
+        if e_[0] or i_[0]:
+            rot_a = f"{a} (jan-{MES_CURTO[mr - 1]})" if (a == ar and mr < 12) else str(a)
+            lin_csv.append(f"{rot_a};{round(e_[0])};{round(e_[1])};{round(i_[0])};{round(i_[1])}")
+    url_csv = B.url_par(cod, pais)
+    B.csv[url_csv] = "\ufeff" + "\r\n".join(lin_csv) + "\r\n"
+    nota = nota.replace("</p>", link_csv("comexemnumeros-" + url_csv.strip("/").replace("/", "-") + ".csv") + "</p>", 1)
     graf_anos = svg_anos(anos, vals, "var(--exp)" if exp_princ else "var(--imp)", parcial=mr < 12)
     anual = (f'<div class="card chart"><h2>Ano a ano</h2>'
              + (f'<div role="img" aria-label="Valor por ano">{graf_anos}</div>' if graf_anos else "")
@@ -1518,7 +1739,7 @@ def pg_sobre(B) -> str:
 <div class="two"><div class="card"><h2>Neste mês</h2><table><tbody>
 <tr><td>Produtos exportados (SH4)</td><td class="r">{nf(np_, 0)}</td></tr><tr><td>Produtos importados (SH4)</td><td class="r">{nf(ni, 0)}</td></tr>
 <tr><td>Países parceiros</td><td class="r">{nf(len(B.pais), 0)}</td></tr><tr><td>Estados</td><td class="r">{len(B.uf)}</td></tr></tbody></table></div>
-<div class="card"><h2>Fonte e método</h2><ul class="plain"><li>Fonte: API do Comex Stat, Secex/MDIC. Valores em US$ FOB.</li><li>Atualização automática no início de cada mês, quando o MDIC publica o mês anterior.</li><li>Variações sempre contra o mesmo mês do ano anterior.</li><li>Produtos na classificação SH4 (posição do Sistema Harmonizado). Os nomes curtos são nossos; o nome oficial aparece em cada página.</li><li>Estado: UF de origem do produto exportado e de destino do importado.</li><li>Porto: unidade da Receita Federal onde a carga foi despachada (porto, aeroporto ou posto de fronteira). Nem sempre é o local físico de embarque. Só ganham página os locais com pelo menos US$ 10 milhões de movimento nos últimos 12 meses.</li><li>Produto e país: página para cada combinação com pelo menos US$ 10 milhões em 12 meses, na exportação ou na importação. Mês a mês a partir de outubro de 2025 (a janela cresce a cada atualização) e totais anuais desde 2015.</li></ul></div></div>"""
+<div class="card"><h2>Fonte e método</h2><ul class="plain"><li>Fonte: API do Comex Stat, Secex/MDIC. Valores em US$ FOB.</li><li>Atualização automática no início de cada mês, quando o MDIC publica o mês anterior.</li><li>Variações sempre contra o mesmo mês do ano anterior.</li><li>Produtos na classificação SH4 (posição do Sistema Harmonizado). Os nomes curtos são nossos; o nome oficial aparece em cada página.</li><li>Estado: UF de origem do produto exportado e de destino do importado.</li><li>Porto: unidade da Receita Federal onde a carga foi despachada (porto, aeroporto ou posto de fronteira). Nem sempre é o local físico de embarque. Só ganham página os locais com pelo menos US$ 10 milhões de movimento nos últimos 12 meses.</li><li>Produto e país: página para cada combinação com pelo menos US$ 10 milhões em 12 meses, na exportação ou na importação. Mês a mês a partir de outubro de 2025 (a janela cresce a cada atualização) e totais anuais desde 2015.</li><li>Município: domicílio fiscal da empresa que exportou ou importou (não necessariamente onde a mercadoria foi produzida). Página para os municípios com pelo menos US$ 10 milhões em 12 meses.</li><li>Toda página com série tem o botão "Baixar dados (CSV)", com separador ponto e vírgula, que abre direto no Excel.</li></ul></div></div>"""
     return pagina(B, "/sobre/", "Como funciona | Comex em Números",
                   "Como o Comex em Números transforma os dados oficiais do Comex Stat (Secex/MDIC) em páginas por produto, país, estado e porto.",
                   c, "/sobre/", migalhas=[(None, "Como funciona")])
@@ -1566,7 +1787,7 @@ def main() -> None:
         return
     B = Base(json.loads(DADOS.read_text(encoding="utf-8")))
     B.par_url = {k: v for k, v in B.par_url.items() if ativo_prod(B.prod[k[0]])}
-    for pasta in ("produto", "pais", "estado", "porto", "exportacao", "importacao", "produtos", "paises", "estados", "portos", "sobre", "embed", "assets", "resumo"):
+    for pasta in ("produto", "pais", "estado", "porto", "municipio", "municipios", "exportacao", "importacao", "produtos", "paises", "estados", "portos", "sobre", "embed", "assets", "resumo"):
         shutil.rmtree(SAIDA / pasta, ignore_errors=True)
     (SAIDA / "assets").mkdir(parents=True, exist_ok=True)
     shutil.copy(SITE / "estilo.css", SAIDA / "assets" / "estilo.css")
@@ -1600,6 +1821,11 @@ def main() -> None:
         n_prod += 1
     for it in B.pais.values():
         escreve(it["url"], pg_lugar(B, "pais", it), urls)
+    if B.mun:
+        escreve("/municipios/", pg_municipios(B), urls)
+        for r in B.mun.values():
+            if r["url"]:
+                escreve(r["url"], pg_municipio(B, r), urls)
     for velho, novo in RENOMEADOS.items():
         escreve(velho, redirect(novo))
     for (cod, pais) in B.par_url:
@@ -1615,6 +1841,8 @@ def main() -> None:
     B.arq_urls.write_text(json.dumps(dict(sorted(B.urls.items())), ensure_ascii=False, indent=0), encoding="utf-8")
     (SAIDA / "assets" / "busca.json").write_text(json.dumps(busca, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
     hoje = B.d["gerado_em"][:10]
+    for u, txt in B.csv.items():
+        (SAIDA / u.strip("/") / "dados.csv").write_text(txt, encoding="utf-8")
     sm = ['<?xml version="1.0" encoding="UTF-8"?>', '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">']
     sm += [f"<url><loc>{BASE}{u}</loc><lastmod>{hoje}</lastmod></url>" for u in urls]
     sm.append("</urlset>")
@@ -1624,7 +1852,7 @@ def main() -> None:
     (SAIDA / ".nojekyll").write_text("", encoding="utf-8")
     (SAIDA / "CNAME").write_text(DOMINIO + "\n", encoding="utf-8")
     (SAIDA / "dados.json").unlink(missing_ok=True)
-    print(f"Site gerado: {len(urls)} páginas no sitemap ({n_prod} produtos, {len(B.pais)} países, {len(B.uf)} estados, {len(B.porto)} portos, {len(B.par_url)} produto×país).")
+    print(f"Site gerado: {len(urls)} páginas no sitemap ({n_prod} produtos, {len(B.pais)} países, {len(B.uf)} estados, {len(B.porto)} portos, {len(B.par_url)} produto×país, {sum(1 for r in B.mun.values() if r["url"])} municípios).")
 
 
 if __name__ == "__main__":
