@@ -52,6 +52,8 @@ INDICES_FAMILIA = {
              "Quanto a cidade recebe de royalties e participação especial"),
     "economia": ("https://economiaemnumeros.com.br/municipios/busca.json", "Economia", "Economia em Números",
                  "População, PIB, Bolsa Família e contas da prefeitura"),
+    "voo": ("https://vooemnumeros.com.br/aeroportos/indice.json", "Voos", "Voo em Números",
+            "Atrasos e cancelamentos no aeroporto da cidade"),
 }
 
 
@@ -415,6 +417,9 @@ class Base:
         self.tem_serie = any(self.serie[k] for k in self.serie)
         self._carrega_municipios()
         self.familia = carrega_familia() if self.mun else {}
+        # estados que têm lista de cidades no Economia em Números (/municipios/<estado>/), lidos do índice dele
+        self.cidades_economia = {m.group(1) for v in self.familia.values() for (_, portal, _, u) in v
+                                 if portal == "Economia em Números" and (m := re.search(r"/municipios/([a-z0-9-]+)/[a-z0-9-]+/$", u))}
         # só ganha página o local com movimento relevante nos últimos 12 meses (≥ US$ 10 mi), para evitar páginas vazias
         def mov12(nome):
             return sum(sum(self.serie_de("portos", fl, nome)[0][-12:]) for fl in ("export", "import"))
@@ -1025,7 +1030,82 @@ NAV = [("/", "Início"), ("/exportacao/", "Exportação"), ("/importacao/", "Imp
        ("/produtos/", "Produtos"), ("/paises/", "Países"), ("/estados/", "Estados"), ("/municipios/", "Municípios"), ("/portos/", "Portos"), ("/sobre/", "Como funciona")]
 
 
-def pagina(B, caminho, titulo, descricao, corpo, ativo="", jsonld=None, migalhas=None, imagem=None) -> str:
+# ---------------------------------------------------------------- Continue explorando (entre os portais)
+# Para incluir um novo portal, acrescente uma linha aqui e em FAMILIA.
+PORTAIS = {
+    "oleo": ("Óleo em Números", "https://oleoemnumeros.com.br", "#B45309"),
+    "comex": ("Comex em Números", BASE, "#0b7a68"),
+    "voo": ("Voo em Números", "https://vooemnumeros.com.br", "#7C5CE0"),
+    "economia": ("Economia em Números", "https://economiaemnumeros.com.br", "#2a5bc4"),
+}
+ESTE = "comex"
+SETOR_EXTERNO = ("economia", "/setor-externo/", "Balança comercial e contas externas", "O saldo do país, as reservas e a conta corrente")
+CAMBIO = ("economia", "/cambio/", "Dólar", "A cotação, o histórico e o que o mercado projeta")
+# produtos (SH4) que têm assunto em outro portal da família
+PRODUTO_IRMAO = {
+    "2709": [("oleo", "/", "Produção de petróleo e gás no Brasil", "Por operadora, campo e bacia, mês a mês"),
+             ("oleo", "/refino/", "Refino de petróleo", "Quanto cada refinaria processa e produz")],
+    "2710": [("oleo", "/refino/", "Refino de petróleo", "Quanto cada refinaria processa e produz de cada derivado"),
+             ("oleo", "/precos/", "Preço da gasolina e do diesel", "Preços nos postos, por estado e município")],
+    "2711": [("oleo", "/gas/", "Gás natural no Brasil", "Produção, queima, reinjeção e aproveitamento")],
+    "2713": [("oleo", "/refino/", "Refino de petróleo", "Quanto cada refinaria processa e produz")],
+    "8802": [("voo", "/", "Os voos no Brasil", "Pontualidade e cancelamentos por companhia e aeroporto")],
+    "8803": [("voo", "/", "Os voos no Brasil", "Pontualidade e cancelamentos por companhia e aeroporto")],
+}
+
+
+def continue_html(B, caminho: str, extra=None) -> str:
+    """Cartões no fim da página: (portal, caminho, título, descrição); no máximo 4.
+    Cada clique é contado no GoatCounter como evento continue/<origem>-<destino>."""
+    itens = list(extra or [])
+    m = re.fullmatch(r"/produto/(\d{4})-[^/]+/", caminho)
+    if caminho == "/":
+        itens += [SETOR_EXTERNO, CAMBIO, ("oleo", "/", "De onde vem o petróleo que o Brasil exporta", "Produção por campo, operadora e bacia"),
+                  (ESTE, "/resumo/", "Resumos de cada mês", "O que mudou na balança comercial, mês a mês")]
+    elif caminho in ("/exportacao/", "/importacao/"):
+        itens += [(ESTE, "/produtos/", "Todos os produtos", "Do mais ao menos vendido, com busca"), (ESTE, "/paises/", "Países parceiros", "Para onde o Brasil vende e de onde compra"),
+                  SETOR_EXTERNO, CAMBIO]
+    elif caminho == "/produtos/":
+        itens += [(ESTE, "/paises/", "Países parceiros", "Para onde o Brasil vende e de onde compra"), (ESTE, "/estados/", "Estados", "O que cada estado vende e compra"),
+                  SETOR_EXTERNO, CAMBIO]
+    elif m:
+        itens += PRODUTO_IRMAO.get(m.group(1), []) + [(ESTE, "/paises/", "Países parceiros", "Para onde o Brasil vende e de onde compra"), SETOR_EXTERNO, CAMBIO]
+    elif caminho.startswith("/pais/") or caminho == "/paises/":
+        itens += [(ESTE, "/produtos/", "Todos os produtos", "Do mais ao menos vendido, com busca"), (ESTE, "/estados/", "Estados", "O que cada estado vende e compra"), SETOR_EXTERNO, CAMBIO]
+    elif caminho.startswith("/estado/") or caminho == "/estados/":
+        e = re.fullmatch(r"/estado/([a-z0-9-]+)/", caminho)
+        if e and e.group(1) in B.cidades_economia:
+            itens.append(("economia", f"/municipios/{e.group(1)}/", "Cidades do estado: PIB e prefeitura", "População, PIB e de onde vem o dinheiro de cada município"))
+        itens += [(ESTE, "/municipios/", "Exportações por município", "O ranking das cidades que mais vendem"), (ESTE, "/produtos/", "Todos os produtos", "Do mais ao menos vendido, com busca"),
+                  SETOR_EXTERNO, CAMBIO]
+    elif caminho.startswith("/porto/") or caminho == "/portos/":
+        itens += [(ESTE, "/produtos/", "Todos os produtos", "Do mais ao menos vendido, com busca"), (ESTE, "/paises/", "Países parceiros", "Para onde o Brasil vende e de onde compra"),
+                  SETOR_EXTERNO, CAMBIO]
+    elif caminho.startswith("/municipio/") or caminho == "/municipios/":
+        itens += [(ESTE, "/municipios/", "Exportações por município", "O ranking das cidades que mais vendem"), (ESTE, "/estados/", "Estados", "O que cada estado vende e compra"),
+                  SETOR_EXTERNO, (ESTE, "/produtos/", "Todos os produtos", "Do mais ao menos vendido, com busca")]
+    elif caminho.startswith("/resumo/"):
+        itens += [(ESTE, "/exportacao/", "Exportações", "O que o Brasil vendeu no mês"), (ESTE, "/importacao/", "Importações", "O que o Brasil comprou no mês"),
+                  SETOR_EXTERNO, CAMBIO]
+    cartoes, vistos = [], {caminho}
+    for portal, cam, titulo, desc in itens:
+        nome, base, cor = PORTAIS[portal]
+        href = cam if portal == ESTE else base + cam
+        if href in vistos:
+            continue
+        vistos.add(href)
+        cartoes.append(f'<li><a href="{esc(href)}" data-goatcounter-click="continue/{ESTE}-{portal}" '
+                       f'data-goatcounter-title="Continue explorando: {esc(titulo)}"><span class="cont-tag"><i style="background:{cor}"></i>{nome}</span>'
+                       f'<b>{esc(titulo)}</b><span class="cont-d">{esc(desc)}</span></a></li>')
+        if len(cartoes) == 4:
+            break
+    if not cartoes:
+        return ""
+    return ('<section class="continue" aria-labelledby="continue-t"><h2 id="continue-t">Continue explorando</h2>'
+            f'<ul class="cont-grid">{"".join(cartoes)}</ul></section>')
+
+
+def pagina(B, caminho, titulo, descricao, corpo, ativo="", jsonld=None, migalhas=None, imagem=None, continuar=None) -> str:
     url = BASE + caminho
     # o Google corta títulos acima de ~60 caracteres: tira a marca da <title> quando passa disso
     titulo_tag = titulo[:-len(" | Comex em Números")] if len(titulo) > 62 and titulo.endswith(" | Comex em Números") else titulo
@@ -1081,6 +1161,7 @@ def pagina(B, caminho, titulo, descricao, corpo, ativo="", jsonld=None, migalhas
 <main>
 {bc}
 {corpo}
+{continue_html(B, caminho, continuar)}
 </main>
 <footer><div>
 <span><strong>Comex em Números</strong> · versão beta</span>
@@ -1803,8 +1884,13 @@ def pg_par(B, cod: str, pais: str) -> str:
           "description": desc, "url": BASE + url, "inLanguage": "pt-BR", "temporalCoverage": f"2015-01/{B.ref}",
           "isAccessibleForFree": True, "license": LICENCA, "creator": {"@type": "Organization", "name": "Comex em Números", "url": BASE + "/"},
           "isBasedOn": "https://comexstat.mdic.gov.br/"}
+    url_pais = B.url_nome("pais", pais)
+    cont = [(ESTE, p["url"], f"Tudo sobre {nome_d}", "Países, estados e série mensal desde 2015")]
+    if url_pais:
+        cont.append((ESTE, url_pais, f"Comércio {de_p}", "Produtos e série mensal desde 2015"))
+    cont += [SETOR_EXTERNO, CAMBIO]
     return pagina(B, url, t, desc, c, "/produtos/", ld,
-                  migalhas=[("/produtos/", "Produtos"), (p["url"], corta(nome, 30)), (None, pais)])
+                  migalhas=[("/produtos/", "Produtos"), (p["url"], corta(nome, 30)), (None, pais)], continuar=cont)
 
 
 def titulo_mes(B) -> str:
@@ -2123,7 +2209,9 @@ def main() -> None:
     if B.porto:
         escreve("/portos/", pg_lista(B, "porto"), urls)
         for it in B.porto.values():
-            if (it.get("export") or {}).get("fob") or (it.get("import") or {}).get("fob"):
+            # B.porto já passou pelo filtro de movimento dos últimos 12 meses e a lista /portos/ mostra todos
+            # eles; todo item da lista precisa de página, mesmo que o mês atual esteja zerado (ex.: Porto Murtinho).
+            if B.tem_serie or (it.get("export") or {}).get("fob") or (it.get("import") or {}).get("fob"):
                 escreve(it["url"], pg_lugar(B, "porto", it), urls)
 
     B.arq_urls.write_text(json.dumps(dict(sorted(B.urls.items())), ensure_ascii=False, indent=0), encoding="utf-8")
