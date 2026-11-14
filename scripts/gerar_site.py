@@ -1943,9 +1943,29 @@ def pg_embed(B) -> str:
 
 
 def pg_404() -> str:
-    return """<!DOCTYPE html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+    # Tenta achar o produto pelo endereço (ex.: /exportacao/desperdicios-de-seda) e redireciona;
+    # se não achar, mostra a busca já preenchida.
+    js = """<script>
+(function(){
+  var partes=location.pathname.split("/").filter(Boolean), alvo=partes[partes.length-1]||"";
+  var cod=(location.pathname.match(/(?:^|\\/)(\\d{4})(?:-|\\/|$)/)||[])[1];
+  if(cod){location.replace("/produto/"+cod+"/");return;}
+  if(!alvo)return;
+  var q=decodeURIComponent(alvo).replace(/-/g," ");
+  var inp=document.getElementById("busca"); if(inp){inp.value=q;}
+  fetch("/assets/busca.json").then(function(r){return r.json();}).then(function(lista){
+    var s="-"+alvo.toLowerCase();
+    var achou=lista.filter(function(p){var u=p[3].split("/")[2]||"";return u.slice(4)===s||u.slice(4).indexOf(s)===0;});
+    if(achou.length===1){location.replace(achou[0][3]);return;}
+    if(inp){inp.dispatchEvent(new Event("input"));}
+  }).catch(function(){});
+})();
+</script>"""
+    return ("""<!DOCTYPE html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Página não encontrada | Comex em Números</title><meta name="robots" content="noindex"><link rel="icon" href="/favicon.svg" type="image/svg+xml"><link rel="stylesheet" href="/assets/estilo.css"></head>
-<body><main><div class="card"><h1>Página não encontrada</h1><p>Este endereço não existe ou mudou. <a href="/">Voltar ao início</a> ou <a href="/produtos/">ver todos os produtos</a>.</p></div></main>""" + GOAT + "</body></html>"
+<body><main><div class="card"><h1>Página não encontrada</h1><p>Este endereço não existe ou mudou. Procure o produto abaixo, <a href="/">volte ao início</a> ou veja <a href="/produtos/">todos os produtos</a>, <a href="/paises/">países</a> e <a href="/municipios/">municípios</a>.</p>
+<div class="search"><label for="busca" class="small" style="align-self:center">Buscar</label><input id="busca" type="search" placeholder="Ex.: café, soja, aço" autocomplete="off"></div><div id="busca-res" aria-live="polite"></div></div></main>
+<script src="/assets/app.js" defer></script>""" + js + GOAT + "</body></html>")
 
 
 def redirect(destino: str) -> str:
