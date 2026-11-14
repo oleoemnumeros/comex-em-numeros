@@ -44,6 +44,49 @@ FAMILIA = [
 ]
 
 
+# ---------------------------------------------------------------- links cruzados por município
+# Cada portal publica a lista das próprias páginas de município; aqui lemos a dos outros e guardamos
+# uma cópia em data/familia/ para o caso de o outro site estar fora do ar na hora da geração.
+INDICES_FAMILIA = {
+    "oleo": ("https://oleoemnumeros.com.br/royalties/indice.json", "Royalties de petróleo", "Óleo em Números",
+             "Quanto a cidade recebe de royalties e participação especial"),
+    "economia": ("https://economiaemnumeros.com.br/municipios/busca.json", "Economia", "Economia em Números",
+                 "População, PIB, Bolsa Família e contas da prefeitura"),
+}
+
+
+def chave_cidade(nome: str, uf: str) -> str:
+    t = unicodedata.normalize("NFKD", str(nome)).encode("ascii", "ignore").decode().lower()
+    return re.sub(r"[^a-z0-9]+", "", t) + "-" + str(uf).strip().upper()
+
+
+def carrega_familia() -> dict:
+    """{chave_cidade: [(rótulo, portal, descrição, url), ...]}"""
+    import urllib.request
+    pasta = RAIZ / "data" / "familia"
+    out: dict = {}
+    for nome, (url, rot, portal, desc) in INDICES_FAMILIA.items():
+        cache = pasta / f"{nome}.json"
+        itens = None
+        try:
+            with urllib.request.urlopen(urllib.request.Request(url, headers={"User-Agent": "comexemnumeros"}), timeout=15) as r:
+                itens = json.loads(r.read().decode("utf-8"))
+            pasta.mkdir(parents=True, exist_ok=True)
+            cache.write_text(json.dumps(itens, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
+        except Exception:  # noqa: BLE001
+            if cache.exists():
+                itens = json.loads(cache.read_text(encoding="utf-8"))
+        base = url.split("/", 3)[:3]
+        for it in itens or []:
+            try:
+                cid, uf, caminho = it[0], it[1], it[2]
+            except (IndexError, TypeError):
+                continue
+            link = caminho if caminho.startswith("http") else "/".join(base) + caminho
+            out.setdefault(chave_cidade(cid, uf), []).append((rot, portal, desc, link))
+    return out
+
+
 def familia_html(atual: str = "Comex em Números") -> str:
     itens = []
     for nome, tema, url, cor in FAMILIA:
@@ -371,6 +414,7 @@ class Base:
                                     reg["k"][base_i + j] += it["k"][j]
         self.tem_serie = any(self.serie[k] for k in self.serie)
         self._carrega_municipios()
+        self.familia = carrega_familia() if self.mun else {}
         # só ganha página o local com movimento relevante nos últimos 12 meses (≥ US$ 10 mi), para evitar páginas vazias
         def mov12(nome):
             return sum(sum(self.serie_de("portos", fl, nome)[0][-12:]) for fl in ("export", "import"))
@@ -1498,12 +1542,19 @@ def pg_municipio(B, r) -> str:
     viz = (f'<div class="card"><div class="row-head"><h2>Outros municípios {"do" if ARTIGO_UF.get(uf_nome) == "o" else "da" if ARTIGO_UF.get(uf_nome) == "a" else "de"} {esc(uf_nome)}</h2>'
            + (f'<a class="small" href="{url_uf}">Ver estado →</a>' if url_uf else "") + f'</div>{tabela(B, vizinhos, "municipio", 0)}</div>') if vizinhos else ""
     serie_html = bloco_serie(B, sev, siv, None, f"das exportações {esc(dc)}", url=r["url"])
+    outros = B.familia.get(chave_cidade(r["cidade"], r["uf"]), [])
+    mais = ""
+    if outros:
+        itens = "".join(f'<li><a href="{esc(u)}">{esc(rot)} {esc(dc)}</a><span class="small"> · {esc(portal)}: {esc(d)}</span></li>'
+                        for rot, portal, d, u in outros)
+        mais = f'<div class="card"><h2>Mais sobre {esc(r["rotulo"])}</h2><ul class="plain">{itens}</ul></div>'
     c = f"""<div class="card"><span class="eyebrow">Município · {esc(uf_nome)}</span><h1>{esc(r["rotulo"])}</h1><p class="lede">{frase}</p>
 <p class="small">{AVISO_MUN}</p></div>
 <div class="tiles">{tiles}</div>
 {bloco_13(B, sev, siv, E0, E, I0, I)}
 {"".join(blocos)}
 {serie_html}
+{mais}
 {viz}"""
     t = f"Exportações e importações {dc} | Comex em Números"
     if len(t) > 75:
@@ -2056,6 +2107,9 @@ def main() -> None:
     for it in B.pais.values():
         escreve(it["url"], pg_lugar(B, "pais", it), urls)
     if B.mun:
+        indice = sorted([r["cidade"], r["uf"], r["url"]] for r in B.mun.values() if r["url"])
+        (SAIDA / "municipios").mkdir(parents=True, exist_ok=True)
+        (SAIDA / "municipios" / "indice.json").write_text(json.dumps(indice, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
         escreve("/municipios/", pg_municipios(B), urls)
         for r in B.mun.values():
             if r["url"]:
