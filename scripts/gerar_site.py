@@ -983,12 +983,20 @@ NAV = [("/", "Início"), ("/exportacao/", "Exportação"), ("/importacao/", "Imp
 
 def pagina(B, caminho, titulo, descricao, corpo, ativo="", jsonld=None, migalhas=None, imagem=None) -> str:
     url = BASE + caminho
+    # o Google corta títulos acima de ~60 caracteres: tira a marca da <title> quando passa disso
+    titulo_tag = titulo[:-len(" | Comex em Números")] if len(titulo) > 62 and titulo.endswith(" | Comex em Números") else titulo
     nav = "".join(f'<a href="{h}"' + (' aria-current="page"' if h == ativo else "") + f">{t}</a>" for h, t in NAV)
     bc = ""
+    lds = [jsonld] if jsonld else []
+    if migalhas:
+        itens = [{"@type": "ListItem", "position": 1, "name": "Início", "item": BASE + "/"}]
+        for i, (h, t_) in enumerate(migalhas, 2):
+            itens.append({"@type": "ListItem", "position": i, "name": t_, "item": BASE + (h or caminho)})
+        lds.append({"@context": "https://schema.org", "@type": "BreadcrumbList", "itemListElement": itens})
     if migalhas:
         partes = ['<a href="/">Início</a>'] + [f'<a href="{h}">{esc(t)}</a>' if h else esc(t) for h, t in migalhas]
         bc = '<nav class="bc" aria-label="Você está em">' + " › ".join(partes) + "</nav>"
-    ld = f'<script type="application/ld+json">{json.dumps(jsonld, ensure_ascii=False)}</script>' if jsonld else ""
+    ld = "".join(f'<script type="application/ld+json">{json.dumps(x, ensure_ascii=False)}</script>' for x in lds)
     gerado = dt.datetime.fromisoformat(B.d["gerado_em"]).strftime("%d/%m/%Y")
     v = B.d["gerado_em"][:10]
     return f"""<!DOCTYPE html>
@@ -996,7 +1004,7 @@ def pagina(B, caminho, titulo, descricao, corpo, ativo="", jsonld=None, migalhas
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>{esc(titulo)}</title>
+<title>{esc(titulo_tag)}</title>
 <meta name="description" content="{esc(descricao)}">
 <link rel="canonical" href="{url}">
 <meta property="og:type" content="website">
@@ -1224,6 +1232,16 @@ def pg_lista(B, tipo: str) -> str:
              "porto": "Por onde as mercadorias saem e entram no Brasil: portos, aeroportos e postos de fronteira. Toque em um local "
                       "para ver os produtos. O dado é a unidade da Receita Federal onde a carga foi despachada, que nem sempre é o porto "
                       "físico de embarque: por Niterói (RJ), por exemplo, passa quase só petróleo."}[tipo]
+    if tipo in ("pais", "porto"):
+        nomes = {}
+        for fl in ("export", "import"):
+            for r in B.lista(chave, fl):
+                if not (tipo == "porto" and nao_declarado(r["nome"])):
+                    u = B.url_nome(tipo, r["nome"])
+                    if u:
+                        nomes[r["nome"]] = u
+        az = " · ".join(f'<a href="{u}">{esc(n)}</a>' for n, u in sorted(nomes.items(), key=lambda t: t[0]))
+        blocos.append(f'<div class="card"><h2>{"Todos os países" if tipo == "pais" else "Todos os locais"} (A–Z)</h2><p class="small">{az}</p></div>')
     c = f'<div class="card"><span class="eyebrow">{tit} · {mes_nome(B.ref)}</span><h1>{tit}</h1><p class="lede">{texto}</p></div><div class="cols">{"".join(blocos)}</div>'
     caminho = {"pais": "/paises/", "estado": "/estados/", "porto": "/portos/"}[tipo]
     desc = {"pais": f"Exportações e importações do Brasil por país em {mes_nome(B.ref)}: principais destinos e origens, com variação anual.",
@@ -1281,7 +1299,7 @@ def pg_produto(B, p: dict) -> str:
         return f'<div class="cols">{"".join(cards)}</div>' if len(cards) == 2 else cards[0]
     if E:
         secoes.append(par_cards(
-            f'<div class="card"><h2>Para onde vai</h2><p class="small">Países que mais compraram {esc(minusc(nome))} do Brasil em {mes_nome(B.ref)}.</p>{tabela(B, dest[:10], "pais", E, urlf=lambda r: B.url_par(cod, r["nome"]))}</div>' if dest else "",
+            f'<div class="card"><h2>Para onde vai</h2><p class="small">Países que mais compraram {esc(minusc(nome))} do Brasil em {mes_nome(B.ref)}.</p>{tabela(B, dest[:25], "pais", E, urlf=lambda r: B.url_par(cod, r["nome"]))}</div>' if dest else "",
             f'<div class="card"><h2>Estados que mais exportam</h2>{tabela(B, ufe[:10], "estado", E)}</div>' if ufe else ""))
     pse = [r for r in B.cruz("produto_porto", "export", filtro_cod=cod) if not nao_declarado(r["nome"])]
     psi = [r for r in B.cruz("produto_porto", "import", filtro_cod=cod) if not nao_declarado(r["nome"])]
@@ -1289,7 +1307,7 @@ def pg_produto(B, p: dict) -> str:
         secoes.append(f'<div class="card"><h2>Por onde sai</h2><p class="small">Portos, aeroportos e fronteiras por onde {esc(minusc(nome))} foi exportado em {mes_nome(B.ref)}.</p>{tabela(B, pse[:8], "porto", E)}</div>')
     if I:
         secoes.append(par_cards(
-            f'<div class="card"><h2>De onde vem</h2><p class="small">Países de onde o Brasil mais importou em {mes_nome(B.ref)}.</p>{tabela(B, orig[:10], "pais", I, urlf=lambda r: B.url_par(cod, r["nome"]))}</div>' if orig else "",
+            f'<div class="card"><h2>De onde vem</h2><p class="small">Países de onde o Brasil mais importou em {mes_nome(B.ref)}.</p>{tabela(B, orig[:25], "pais", I, urlf=lambda r: B.url_par(cod, r["nome"]))}</div>' if orig else "",
             f'<div class="card"><h2>Estados que mais importam</h2>{tabela(B, ufi[:10], "estado", I)}</div>' if ufi else ""))
     if I and psi:
         secoes.append(f'<div class="card"><h2>Por onde entra</h2><p class="small">Portos, aeroportos e fronteiras por onde {esc(minusc(nome))} foi importado em {mes_nome(B.ref)}.</p>{tabela(B, psi[:8], "porto", I)}</div>')
@@ -1510,6 +1528,15 @@ def pg_municipios(B) -> str:
         blocos.append(f'<div class="card"><h2>{h2}</h2>{tabela(B, lst[:100], "municipio", tot)}</div>')
     por_uf = " · ".join(f'<a href="{B.url_nome("estado", n)}#municipios">{s_}</a>' for s_, n in sorted(UF_SIGLA.items()) if B.url_nome("estado", n))
     n_pag = sum(1 for r in B.mun.values() if r["url"])
+    por_est = {}
+    for r in B.mun.values():
+        if r["url"]:
+            por_est.setdefault(r["uf"], []).append(r)
+    todos = "".join(
+        f'<h3 id="uf-{esc(uf.lower())}">{esc(UF_SIGLA[uf])}</h3><p class="small">' +
+        " · ".join(f'<a href="{r["url"]}">{esc(r["cidade"])}</a>' for r in sorted(rs, key=lambda x: x["cidade"])) + "</p>"
+        for uf, rs in sorted(por_est.items(), key=lambda t: UF_SIGLA[t[0]]))
+    blocos.append(f'<div class="card"><h2>Todos os municípios com página</h2>{todos}</div>')
     c = f"""<div class="card"><span class="eyebrow">Ranking · {cap(mes_nome(B.ref))}</span><h1>Exportações e importações por município</h1>
 <p class="lede">Os municípios brasileiros que mais exportaram e importaram em {mes_nome(B.ref)}. Toque em um município para ver produtos, países e a série desde 2015. São {nf(n_pag, 0)} municípios com página própria (pelo menos US$ 10 milhões em 12 meses).</p>
 <p class="small">{AVISO_MUN}</p><p class="small">Por estado: {por_uf}</p></div>
