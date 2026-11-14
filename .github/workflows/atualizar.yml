@@ -4,7 +4,7 @@ on:
   # Os dados do mês saem nos primeiros dias úteis; o robô confere todo dia
   # do dia 1 ao 12 e só baixa quando aparece um mês novo.
   schedule:
-    - cron: "17 12 1-12 * *"
+    - cron: "17 12 * * *"
   # Botão "Run workflow" na aba Actions
   workflow_dispatch:
     inputs:
