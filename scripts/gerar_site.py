@@ -1204,6 +1204,7 @@ def pagina(B, caminho, titulo, descricao, corpo, ativo="", jsonld=None, migalhas
 <script src="/assets/app.js?v={v}" defer></script>
 <script src="/assets/familia.js?v={v}" defer></script>
 <script src="/assets/familia-graficos.js?v={v}" defer></script>
+<script src="/assets/familia-compartilhar.js?v={v}" defer></script>
 {GOAT}
 </body>
 </html>
@@ -2202,6 +2203,7 @@ def main() -> None:
     shutil.copy(SITE / "app.js", SAIDA / "assets" / "app.js")
     shutil.copy(SITE / "familia.js", SAIDA / "assets" / "familia.js")
     shutil.copy(SITE / "familia-graficos.js", SAIDA / "assets" / "familia-graficos.js")
+    shutil.copy(SITE / "familia-compartilhar.js", SAIDA / "assets" / "familia-compartilhar.js")
     for arq in ("og.png", "apple-touch-icon.png"):
         shutil.copy(SITE / arq, SAIDA / "assets" / arq)
     for arq in ("favicon.ico", "favicon.svg"):
