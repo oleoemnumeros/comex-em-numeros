@@ -37,10 +37,10 @@ GOAT = '<script data-goatcounter="https://comexemnumeros.goatcounter.com/count" 
 
 # Família em Números: para incluir um novo portal, acrescente uma linha nesta lista
 FAMILIA = [
-    ("Óleo em Números", "Petróleo e gás", "https://oleoemnumeros.com.br/", "#B45309"),
+    ("Óleo em Números", "Petróleo e gás", "https://oleoemnumeros.com.br/", "#17758C"),
     ("Comex em Números", "Exportações e importações", "https://comexemnumeros.com.br/", "var(--exp)"),
-    ("Voo em Números", "Pontualidade aérea", "https://vooemnumeros.com.br/", "#7C5CE0"),
-    ("Economia em Números", "Macroeconomia", "https://economiaemnumeros.com.br/", "#2A5BC4"),
+    ("Voo em Números", "Pontualidade aérea", "https://vooemnumeros.com.br/", "#4FB8EE"),
+    ("Economia em Números", "Macroeconomia", "https://economiaemnumeros.com.br/", "#D9A514"),
 ]
 
 
@@ -1033,10 +1033,10 @@ NAV = [("/", "Início"), ("/exportacao/", "Exportação"), ("/importacao/", "Imp
 # ---------------------------------------------------------------- Continue explorando (entre os portais)
 # Para incluir um novo portal, acrescente uma linha aqui e em FAMILIA.
 PORTAIS = {
-    "oleo": ("Óleo em Números", "https://oleoemnumeros.com.br", "#B45309"),
-    "comex": ("Comex em Números", BASE, "#0b7a68"),
-    "voo": ("Voo em Números", "https://vooemnumeros.com.br", "#7C5CE0"),
-    "economia": ("Economia em Números", "https://economiaemnumeros.com.br", "#2a5bc4"),
+    "oleo": ("Óleo em Números", "https://oleoemnumeros.com.br", "#17758C"),
+    "comex": ("Comex em Números", BASE, "#1F85D0"),
+    "voo": ("Voo em Números", "https://vooemnumeros.com.br", "#4FB8EE"),
+    "economia": ("Economia em Números", "https://economiaemnumeros.com.br", "#D9A514"),
 }
 ESTE = "comex"
 SETOR_EXTERNO = ("economia", "/setor-externo/", "Balança comercial e contas externas", "O saldo do país, as reservas e a conta corrente")
@@ -1142,7 +1142,7 @@ def pagina(B, caminho, titulo, descricao, corpo, ativo="", jsonld=None, migalhas
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="theme-color" content="#0b7a68">
+<meta name="theme-color" content="#1F85D0">
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link rel="icon" href="/favicon.ico" sizes="any">
 <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
@@ -1169,6 +1169,7 @@ def pagina(B, caminho, titulo, descricao, corpo, ativo="", jsonld=None, migalhas
 <span><a href="/resumo/">Resumos mensais</a> · <a href="/produtos/">Todos os produtos</a> · <a href="/paises/">Países</a> · <a href="/estados/">Estados</a> · <a href="/municipios/">Municípios</a> · <a href="/portos/">Portos</a> · <a href="/sobre/">Como funciona</a> · <a href="/sugestoes/">Sugestões e críticas</a></span>
 </div>{familia_html()}</footer>
 <script src="/assets/app.js?v={v}" defer></script>
+<script src="/assets/familia.js?v={v}" defer></script>
 {GOAT}
 </body>
 </html>
@@ -2162,6 +2163,7 @@ def main() -> None:
     (SAIDA / "assets").mkdir(parents=True, exist_ok=True)
     shutil.copy(SITE / "estilo.css", SAIDA / "assets" / "estilo.css")
     shutil.copy(SITE / "app.js", SAIDA / "assets" / "app.js")
+    shutil.copy(SITE / "familia.js", SAIDA / "assets" / "familia.js")
     for arq in ("og.png", "apple-touch-icon.png"):
         shutil.copy(SITE / arq, SAIDA / "assets" / arq)
     for arq in ("favicon.ico", "favicon.svg"):

@@ -6,7 +6,7 @@ from pathlib import Path
 from PIL import Image, ImageDraw, ImageFont
 
 FONTES = Path(__file__).resolve().parent.parent / "site" / "fontes"
-EXP, IMP, INK, BG, MUT = (11, 122, 104), (185, 102, 15), (15, 29, 43), (238, 242, 244), (86, 104, 121)
+EXP, IMP, INK, BG, MUT = (11, 107, 181), (185, 102, 15), (15, 29, 43), (238, 242, 244), (86, 104, 121)
 UP, DOWN = (23, 128, 58), (180, 35, 24)
 
 
