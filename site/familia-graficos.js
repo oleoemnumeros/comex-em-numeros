@@ -154,7 +154,7 @@
       var vmin = Infinity, vmax = -Infinity;
       cfg.s.forEach(function (s) { vista.forEach(function (p) { var v = s.v[p.i]; if (v != null) { vmin = Math.min(vmin, v); vmax = Math.max(vmax, v); } }); });
       if (vmin === Infinity) { vmin = 0; vmax = 1; }
-      var E = eixo(vmin, vmax, barras || (cfg.z && !st.win)), maxlab = 0;
+      var E = eixo(vmin, vmax, barras ? cfg.z !== 0 : (cfg.z && !st.win)), maxlab = 0;
       E.marcas.forEach(function (m) { maxlab = Math.max(maxlab, nf(m, E.casas).length); });
       var PL = Math.max(30, maxlab * 6.6 + 12), PR = 12, PT = cfg.u ? 24 : 10, PB = 26, iw = W - PL - PR, ih = H - PT - PB;
       var y = function (v) { return PT + ih * (1 - (v - E.lo) / (E.hi - E.lo)); };
@@ -197,10 +197,12 @@
           var ns = cfg.s.length, larg = passoB * 0.72 / ns, g0 = passoB * 0.14;
           vista.forEach(function (p, kk) {
             var v = s.v[p.i]; if (v == null) return;
-            var c = (s.cs && s.cs[p.i]) || (v < 0 && s.cn) || cor, ya = y(Math.max(v, 0)), yb = y(Math.min(v, 0));
+            var c = (s.cs && s.cs[p.i]) || (v < 0 && s.cn) || cor, z0 = Math.max(E.lo, Math.min(E.hi, 0)), ya = y(Math.max(v, z0)), yb = y(Math.min(v, z0));
             svg("rect", { x: (PL + passoB * kk + g0 + larg * si).toFixed(1), y: ya.toFixed(1), width: Math.max(1, larg - (ns > 1 ? 1 : 0)).toFixed(1),
               height: Math.max(1, yb - ya).toFixed(1), rx: 2, style: "fill:" + c, "class": "fam-gr-b", "data-k": kk,
               opacity: s.op ? s.op[p.i] : (cfg.hl === 0 || kk === nv - 1) ? 1 : 0.62 }, s_);
+            // valor em cima da barra, quando há espaço (cfg.vl: 1)
+            if (cfg.vl && ns === 1 && passoB >= 26) txt(nf(v, cfg.vd || 0) + suf, +(PL + passoB * kk + passoB / 2).toFixed(1), (v < 0 ? yb + 13 : ya - 5).toFixed(1), "middle");
           });
           return;
         }
