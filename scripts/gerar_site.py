@@ -646,7 +646,27 @@ def quedas(rows, minimo=1e7):
     return sorted(r, key=lambda x: (x["fob"] - x["fob_ant"]))
 
 
-def svg_mensal(B) -> str:
+def escala_us(mx: float):
+    """(divisor, sufixo, casas) para mostrar US$ em bi, mi ou mil, como o resto do site."""
+    if mx >= 1e9:
+        return 1e9, " bi", 2
+    if mx >= 1e6:
+        return 1e6, " mi", 1
+    return 1e3, " mil", 0
+
+
+def fam_gr(cfg: dict, svg: str, aria: str) -> str:
+    """Gráfico interativo (familia-graficos.js): os dados vão no atributo e o SVG de reserva fica dentro, valendo sem JavaScript."""
+    svg = svg.replace("<svg ", f'<svg role="img" aria-label="{esc(aria)}" ', 1)
+    dados = html.escape(json.dumps({**cfg, "a": aria}, ensure_ascii=False, separators=(",", ":")), quote=True)
+    return f'<div class="fam-gr" data-fam-gr="{dados}">{svg}</div>'
+
+
+def _s(nome, vals, cor, div, **extra):
+    return {"n": nome, "v": [round(v / div, 4) if v is not None else None for v in vals], "c": cor, **extra}
+
+
+def svg_mensal(B, fam=False) -> str:
     ano, mes = int(B.ref[:4]), int(B.ref[5:])
     meses = []
     for i in range(12, -1, -1):
@@ -681,6 +701,11 @@ def svg_mensal(B) -> str:
         estilo = ' style="fill:var(--ink);font-weight:700"' if hi else ""
         o.append(f'<text x="{x0:.1f}" y="{T + ih + 33}" text-anchor="middle" font-size="8.5"{estilo}>{nf(sd, 1)}</text>')
     o.append(f'<text x="1" y="{T + ih + 33}" font-size="8.5">saldo</text></svg>')
+    if fam:
+        return fam_gr({"t": "b", "p": meses, "d": 2, "pre": "US$ ", "suf": " bi", "u": "US$ bi", "z": 1,
+                       "s": [_s("Exportação", [r[1] for r in rows], "var(--exp)", 1e9), _s("Importação", [r[2] for r in rows], "var(--imp)", 1e9)],
+                       "x": [_s("Saldo", [r[1] - r[2] for r in rows], "", 1e9)]},
+                      "".join(o), "Exportações e importações mensais do Brasil nos últimos 13 meses")
     return "".join(o)
 
 
@@ -723,7 +748,7 @@ def rot_eixo(v: float) -> str:
     return nf(v, 0)
 
 
-def svg_serie(B, ev, iv) -> str:
+def svg_serie(B, ev, iv, aria="Série mensal de exportações e importações desde 2015") -> str:
     n = len(B.meses)
     if n < 2:
         return ""
@@ -753,7 +778,9 @@ def svg_serie(B, ev, iv) -> str:
         o.append(f'<polyline points="{pts}" fill="none" stroke="{cor}" stroke-width="1.5" stroke-linejoin="round"/>'
                  f'<circle cx="{x(n - 1):.1f}" cy="{y(vals[-1]):.1f}" r="2.6" fill="{cor}"/>')
     o.append("</svg>")
-    return "".join(o)
+    div, suf, d = escala_us(mx)
+    ser = [_s(nome, vals, cor, div) for nome, vals, cor in (("Exportação", ev, "var(--exp)"), ("Importação", iv, "var(--imp)")) if any(vals)]
+    return fam_gr({"t": "l", "p": list(B.meses), "d": d, "pre": "US$ ", "suf": suf, "u": "US$" + suf, "z": 1, "s": ser}, "".join(o), aria)
 
 
 def svg_preco(B, series, unid) -> str:
@@ -796,7 +823,10 @@ def svg_preco(B, series, unid) -> str:
         if ultimo:
             o.append(f'<circle cx="{x(ultimo[0]):.1f}" cy="{y(ultimo[1]):.1f}" r="2.6" fill="{cor}"/>')
     o.append(f'<text x="{L}" y="{T - 2}" font-size="10">{unid}</text></svg>')
-    return "".join(o)
+    nomes = {"var(--exp)": "Exportação", "var(--imp)": "Importação"}
+    ser = [{"n": nomes.get(cor, ""), "v": [round(v, 4) if v else None for v in vals], "c": cor} for vals, cor in series]
+    return fam_gr({"t": "l", "p": list(B.meses), "d": 2, "pre": "US$ ", "suf": "/" + unid.split("/")[-1], "u": unid, "s": ser},
+                  "".join(o), "Preço médio mensal, exportação e importação, desde 2015")
 
 
 def svg_13(B, ev, iv, rot_imp=None) -> str:
@@ -839,7 +869,10 @@ def svg_13(B, ev, iv, rot_imp=None) -> str:
         estilo = ' style="fill:var(--ink);font-weight:700"' if hi else ""
         o.append(f'<text x="{x0:.1f}" y="{T + ih + 14}" text-anchor="middle" font-size="9.5"{estilo}>{MES_CURTO[int(m[5:]) - 1]}</text>')
     o.append("</svg>")
-    return "".join(o)
+    div, suf, d = escala_us(max(max(e13), max(i13)))
+    ser = [_s(nome, vals, cor, div) for nome, vals, cor in (("Exportação", e13, "var(--exp)"), ("Importação", i13, "var(--imp)")) if any(vals)]
+    return fam_gr({"t": "b", "p": list(meses), "d": d, "pre": "US$ ", "suf": suf, "u": "US$" + suf, "z": 1, "s": ser}, "".join(o),
+                  "Exportações e importações dos últimos 13 meses")
 
 
 def bloco_13(B, ev, iv, E0, E, I0, I, extra="", rot_imp=None) -> str:
@@ -855,7 +888,7 @@ def bloco_13(B, ev, iv, E0, E, I0, I, extra="", rot_imp=None) -> str:
         tit = f"{cap(mes_nome(B.ref))} contra {mes_nome(B.ant)}"
         nota = ""
     return (f'<div class="card chart"><div class="row-head"><h2>{tit}</h2>{LEGENDA}</div>'
-            f'<div role="img" aria-label="Exportações e importações mês a mês">{graf}</div>{nota}{extra}</div>')
+            f'<div>{graf}</div>{nota}{extra}</div>')
 
 
 def toneladas(kg: float) -> str:
@@ -1018,7 +1051,7 @@ def bloco_serie(B, ev, iv, ek=None, rotulo="das exportações", url=None, ik=Non
     frase = destaque_serie(B, principal, rot)
     return (f'<div class="card chart"><div class="row-head"><h2>Mês a mês desde 2015</h2>{LEGENDA}</div>'
             + (f'<p>{frase}</p>' if frase else "")
-            + f'<div role="img" aria-label="Série mensal de exportações e importações desde 2015">{svg_serie(B, ev, iv)}</div>'
+            + f'<div>{svg_serie(B, ev, iv)}</div>'
             + f'<p class="src">Valores mensais em US$ FOB. Último ponto: {mes_nome(B.ref)}.{csv}</p></div>'
             + f'<div class="card"><h2>Ano a ano</h2>{tabela_anual(B, ev, iv, ek)}</div>')
 
@@ -1170,6 +1203,7 @@ def pagina(B, caminho, titulo, descricao, corpo, ativo="", jsonld=None, migalhas
 </div>{familia_html()}</footer>
 <script src="/assets/app.js?v={v}" defer></script>
 <script src="/assets/familia.js?v={v}" defer></script>
+<script src="/assets/familia-graficos.js?v={v}" defer></script>
 {GOAT}
 </body>
 </html>
@@ -1217,7 +1251,7 @@ def pg_inicio(B) -> str:
         frase = destaque_serie(B, tev, "das exportações brasileiras")
         serie_brasil = (f'<div class="two"><div class="card chart"><div class="row-head"><h2>Balança desde 2015</h2>{LEGENDA}</div>'
                         + (f"<p>{frase}</p>" if frase else "")
-                        + f'<div role="img" aria-label="Exportações e importações mensais do Brasil desde 2015">{svg_serie(B, tev, tiv)}</div></div>'
+                        + f'<div>{svg_serie(B, tev, tiv, "Exportações e importações mensais do Brasil desde 2015")}</div></div>'
                         + f'<div class="card"><h2>Ano a ano</h2>{tabela_anual(B, tev, tiv, saldo=True)}</div></div>')
     saldo_chip = chip(s, s0) if s0 > 0 else f'<span class="chg flat">antes {nf(s0 / 1e9, 2)}</span>'
     ac_chip = chip(acE["fob"] - acI["fob"], acE["fob_ant"] - acI["fob_ant"]) if acE["fob_ant"] > acI["fob_ant"] else ""
@@ -1226,7 +1260,7 @@ def pg_inicio(B) -> str:
 <p class="lede">Nas importações, o país comprou <strong class="num">{us(I)}</strong>{var_par(I, I0)}. O saldo do mês foi de <strong class="num">{us(s)}</strong>, contra {us(s0)} um ano antes.</p>
 <p class="src">Resumo gerado automaticamente com os dados oficiais do Comex Stat. <a href="/resumo/{B.ref}/">Ler o resumo completo de {MESES[int(B.ref[5:]) - 1]} →</a></p></div>
 <div class="tiles">{tile("exp", "Exportações", nf(E / 1e9, 2), "US$ bi", chip(E, E0), "/exportacao/")}{tile("imp", "Importações", nf(I / 1e9, 2), "US$ bi", chip(I, I0), "/importacao/")}{tile("bal", "Saldo", nf(s / 1e9, 2), "US$ bi", saldo_chip)}{tile("", "Corrente de comércio", nf((E + I) / 1e9, 2), "US$ bi", chip(E + I, E0 + I0))}</div>
-<div class="two"><div class="card chart"><div class="row-head"><h2>Últimos 13 meses</h2>{LEGENDA}</div><div role="img" aria-label="Exportações e importações mensais do Brasil nos últimos 13 meses">{svg_mensal(B)}</div><p class="src">US$ bilhões FOB. Linha de baixo: saldo do mês. Em destaque, o mês atual e o mesmo mês do ano anterior.</p></div>
+<div class="two"><div class="card chart"><div class="row-head"><h2>Últimos 13 meses</h2>{LEGENDA}</div><div>{svg_mensal(B, fam=True)}</div><p class="src">US$ bilhões FOB. Linha de baixo: saldo do mês. Em destaque, o mês atual e o mesmo mês do ano anterior.</p></div>
 <div class="card"><h2>Acumulado no ano</h2><table><thead><tr><th>Jan–{MES_CURTO[int(B.ref[5:]) - 1]}/{B.ref[:4]}</th><th class="r">US$ bi</th><th class="r">vs {B.ant[:4]}</th></tr></thead><tbody>
 <tr><td>Exportações</td><td class="r">{nf(acE["fob"] / 1e9, 2)}</td><td class="r">{chip(acE["fob"], acE["fob_ant"])}</td></tr>
 <tr><td>Importações</td><td class="r">{nf(acI["fob"] / 1e9, 2)}</td><td class="r">{chip(acI["fob"], acI["fob_ant"])}</td></tr>
@@ -1714,7 +1748,10 @@ def svg_anos(anos, vals, cor, parcial=False) -> str:
                  f'<title>{a}: {us(v)}</title></rect>'
                  f'<text x="{x0 + bw / 2:.1f}" y="{T + ih + 14}" text-anchor="middle" font-size="9.5">{str(a)[2:]}</text>')
     o.append("</svg>")
-    return "".join(o)
+    div, suf, d = escala_us(mx)
+    return fam_gr({"t": "b", "p": [str(a) for a in anos], "d": d, "pre": "US$ ", "suf": suf, "u": "US$" + suf, "z": 1, "hl": 0,
+                   "s": [_s("Valor", vals, cor, div, op=[0.5 if (parcial and k == n - 1) else 1 for k in range(n)])]},
+                  "".join(o), "Valor por ano")
 
 
 def pg_par(B, cod: str, pais: str) -> str:
@@ -1834,7 +1871,7 @@ def pg_par(B, cod: str, pais: str) -> str:
     nota = nota.replace("</p>", link_csv("comexemnumeros-" + url_csv.strip("/").replace("/", "-") + ".csv") + "</p>", 1)
     graf_anos = svg_anos(anos, vals, "var(--exp)" if exp_princ else "var(--imp)", parcial=mr < 12)
     anual = (f'<div class="card chart"><h2>Ano a ano</h2>'
-             + (f'<div role="img" aria-label="Valor por ano">{graf_anos}</div>' if graf_anos else "")
+             + (f'<div>{graf_anos}</div>' if graf_anos else "")
              + f'<div class="scroll"><table><thead><tr>{cab}</tr></thead><tbody>{"".join(linhas)}</tbody></table></div>{nota}</div>')
 
     # vizinhos: outros destinos do produto e outros produtos para o país
@@ -2164,6 +2201,7 @@ def main() -> None:
     shutil.copy(SITE / "estilo.css", SAIDA / "assets" / "estilo.css")
     shutil.copy(SITE / "app.js", SAIDA / "assets" / "app.js")
     shutil.copy(SITE / "familia.js", SAIDA / "assets" / "familia.js")
+    shutil.copy(SITE / "familia-graficos.js", SAIDA / "assets" / "familia-graficos.js")
     for arq in ("og.png", "apple-touch-icon.png"):
         shutil.copy(SITE / arq, SAIDA / "assets" / arq)
     for arq in ("favicon.ico", "favicon.svg"):
