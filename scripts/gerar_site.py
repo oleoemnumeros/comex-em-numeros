@@ -1205,6 +1205,7 @@ def pagina(B, caminho, titulo, descricao, corpo, ativo="", jsonld=None, migalhas
 <script src="/assets/familia.js?v={v}" defer></script>
 <script src="/assets/familia-graficos.js?v={v}" defer></script>
 <script src="/assets/familia-compartilhar.js?v={v}" defer></script>
+<script src="/assets/familia-busca.js?v={v}" data-indice="/assets/busca-geral.json?v={v}" data-dica="Produto, país, estado, cidade ou porto" defer></script>
 {GOAT}
 </body>
 </html>
@@ -1352,6 +1353,25 @@ def bloco_portos_fluxo(B, fl, tot) -> str:
     return (f'<div class="two"><div class="card"><div class="row-head"><h2>{"Por onde sai" if fl == "export" else "Por onde entra"}</h2>'
             f'<a class="small" href="/portos/">Todos →</a></div>{tabela(B, portos[:8], "porto", tot)}</div>'
             + (f'<div class="card"><h2>Por meio de transporte</h2>{hbars(vias[:6], cor)}</div>' if vias else "") + "</div>")
+
+
+def busca_geral(B) -> str:
+    """Índice da busca do cabeçalho (familia-busca.js): [título, endereço, tipo, palavras extras], do maior para o menor."""
+    def peso(it):
+        return -(((it.get("export") or {}).get("fob") or 0) + ((it.get("import") or {}).get("fob") or 0))
+    itens = [[rot, url, "página"] for url, rot in NAV if url != "/"]
+    for it in sorted(B.uf.values(), key=peso):
+        itens.append([it["nome"], it["url"], "estado"])
+    for it in sorted(B.pais.values(), key=peso):
+        itens.append([it["nome"], it["url"], "país"])
+    for p in sorted((p for p in B.prod.values() if ativo_prod(p)), key=peso):
+        itens.append([p["curto"], p["url"], "produto", f'{p["codigo"]} {p["nome"]}'[:140]])
+    for r in sorted((r for r in B.mun.values() if r["url"]), key=peso) if B.mun else []:
+        itens.append([f'{r["cidade"]} ({r["uf"]})', r["url"], "município"])
+    for it in sorted(B.porto.values(), key=peso) if B.porto else []:
+        if it.get("url"):
+            itens.append([it["nome"], it["url"], "porto"])
+    return json.dumps(itens, ensure_ascii=False, separators=(",", ":"))
 
 
 def ativo_prod(p) -> bool:
@@ -2204,6 +2224,7 @@ def main() -> None:
     shutil.copy(SITE / "familia.js", SAIDA / "assets" / "familia.js")
     shutil.copy(SITE / "familia-graficos.js", SAIDA / "assets" / "familia-graficos.js")
     shutil.copy(SITE / "familia-compartilhar.js", SAIDA / "assets" / "familia-compartilhar.js")
+    shutil.copy(SITE / "familia-busca.js", SAIDA / "assets" / "familia-busca.js")
     for arq in ("og.png", "apple-touch-icon.png"):
         shutil.copy(SITE / arq, SAIDA / "assets" / arq)
     for arq in ("favicon.ico", "favicon.svg"):
@@ -2258,6 +2279,7 @@ def main() -> None:
 
     B.arq_urls.write_text(json.dumps(dict(sorted(B.urls.items())), ensure_ascii=False, indent=0), encoding="utf-8")
     (SAIDA / "assets" / "busca.json").write_text(json.dumps(busca, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
+    (SAIDA / "assets" / "busca-geral.json").write_text(busca_geral(B), encoding="utf-8")
     hoje = B.d["gerado_em"][:10]
     for u, txt in B.csv.items():
         (SAIDA / u.strip("/") / "dados.csv").write_text(txt, encoding="utf-8")
