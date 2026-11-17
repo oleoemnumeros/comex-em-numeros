@@ -1986,14 +1986,198 @@ def texto_post(B) -> str:
     return "\n".join(l)
 
 
+MIN_EXTREMO = 6      # "maior/menor em N meses" só aparece quando N chega a isso
+MIN_JANELA = 12      # recorde desde o início da série só vale com pelo menos um ano de histórico
+LIMITE_X = 280       # caracteres do post no X
+PESO_LINK_X = 23     # o X conta qualquer link como 23 caracteres
+
+
+def _extremo(valores: list, idx: int):
+    """Diz se o valor de `idx` é o maior ou o menor em N meses: {'tipo', 'n', 'janela'} ou None.
+    N é quantos meses para trás ele se sustenta como o mais alto (ou o mais baixo); se nenhum mês da série o supera,
+    N é o tamanho da série ('janela': True)."""
+    v = valores[idx]
+    if v is None:
+        return None
+    melhor = None
+    for tipo, bate in (("maior", lambda x: x >= v), ("menor", lambda x: x <= v)):
+        j = next((k for k in range(idx - 1, -1, -1) if valores[k] is not None and bate(valores[k])), None)
+        if j is None:
+            n, janela = idx + 1, True
+            if n < MIN_JANELA:
+                continue
+        else:
+            n, janela = idx - j, False
+            if n < MIN_EXTREMO:
+                continue
+        if melhor is None or n > melhor["n"]:
+            melhor = {"tipo": tipo, "n": n, "janela": janela}
+    return melhor
+
+
+def _mes_antes(m: str) -> str:
+    a, mm = int(m[:4]), int(m[5:]) - 1
+    return f"{a - 1}-12" if mm == 0 else f"{a}-{mm:02d}"
+
+
+def _verbo(p) -> str:
+    """'subiram 3,1%', 'caíram 2,0%' ou 'ficaram estáveis'."""
+    if p is None or abs(p) < 0.05:
+        return "ficaram estáveis"
+    return f"{'subiram' if p > 0 else 'caíram'} {nf(abs(p), 1)}%"
+
+
+def _par_verbos(pe, pi) -> str:
+    """'as exportações subiram 3,1% e as importações caíram 2,0%'; no mesmo sentido, o verbo não se repete."""
+    if pe is not None and pi is not None and abs(pe) >= 0.05 and abs(pi) >= 0.05 and (pe > 0) == (pi > 0):
+        return f"as exportações {'subiram' if pe > 0 else 'caíram'} {nf(abs(pe), 1)}% e as importações, {nf(abs(pi), 1)}%"
+    return f"as exportações {_verbo(pe)} e as importações {_verbo(pi)}"
+
+
+def resumo_extremos(B) -> list[str]:
+    """Frases de recorde das exportações, das importações e do saldo na série mensal desde 2015."""
+    ev, iv = B.serie_total("export"), B.serie_total("import")
+    idx = len(B.meses) - 1
+    achados = {}
+    for nome, serie in (("exp", ev), ("imp", iv), ("saldo", [e - i for e, i in zip(ev, iv)])):
+        e = _extremo(serie, idx)
+        if e:
+            achados[nome] = e
+
+    def quando(e):
+        return f"da série, que começa em {mes_nome(B.meses[0])}" if e["janela"] else f"em {e['n']} meses"
+    out = []
+    e1, e2 = achados.get("exp"), achados.get("imp")
+    if e1 and e2 and e1 == e2:
+        out.append(f"As exportações e as importações são as {'maiores' if e1['tipo'] == 'maior' else 'menores'} {quando(e1)}.")
+    else:
+        if e1:
+            out.append(f"As exportações são as {'maiores' if e1['tipo'] == 'maior' else 'menores'} {quando(e1)}.")
+        if e2:
+            out.append(f"As importações são as {'maiores' if e2['tipo'] == 'maior' else 'menores'} {quando(e2)}.")
+    e3 = achados.get("saldo")
+    if e3:
+        out.append(f"O saldo é o {'maior' if e3['tipo'] == 'maior' else 'menor'} {quando(e3)}.")
+    return out
+
+
+def resumo_abertura(B) -> str:
+    """Parágrafo de abertura: saldo, exportações e importações, variação sobre o ano anterior e sobre o mês anterior e recordes."""
+    E, I = B.tot("export", B.ref), B.tot("import", B.ref)
+    E0, I0 = B.tot("export", B.ant), B.tot("import", B.ant)
+    mp = _mes_antes(B.ref)
+    Ep, Ip = B.tot("export", mp), B.tot("import", mp)
+    txt = (f"A balança comercial brasileira fechou {mes_nome(B.ref)} com saldo de {us(E - I)}: "
+           f"exportações de {us(E)} e importações de {us(I)}.")
+    if E0 and I0:
+        txt += f" Sobre {mes_nome(B.ant)}, {_par_verbos(pct(E, E0), pct(I, I0))}."
+    if Ep and Ip:
+        txt += f" Sobre {mes_nome(mp)}, {_par_verbos(pct(E, Ep), pct(I, Ip))}."
+    return txt + "".join(" " + f for f in resumo_extremos(B)[:2])
+
+
+def resumo_parceiros(B) -> list[dict]:
+    """2 ou 3 parceiros em destaque entre os destinos das exportações: o principal, a maior alta e a maior queda sobre o ano anterior."""
+    E = B.tot("export", B.ref)
+    pe = sorted((r for r in B.lista("paises", "export") if r["fob"] > 0), key=lambda r: -r["fob"])
+    if not pe or not E:
+        return []
+    out, vistos = [], set()
+
+    def add(r, nota):
+        if r["nome"] in vistos:
+            return
+        vistos.add(r["nome"])
+        p = pct(r["fob"], r["fob_ant"])
+        var = f", {'alta' if p >= 0 else 'queda'} de {nf(abs(p), 1)}% sobre {mes_nome(B.ant)}" if p is not None else ""
+        d = r["fob"] - r["fob_ant"]
+        texto = f"{r['nome']}: {us(r['fob'])} em exportações ({nf(r['fob'] / E * 100, 1)}% do total{var}); {nota}."
+        out.append({"nome": r["nome"], "texto": texto, "url": B.url_nome("pais", r["nome"]), "dif": d})
+    add(pe[0], "principal destino do mês")
+    alt, que = altas(pe, 2e7), quedas(pe, 2e7)
+    if alt:
+        add(alt[0], f"maior alta entre os destinos (+{us(alt[0]['fob'] - alt[0]['fob_ant'])})")
+    if que:
+        add(que[0], f"maior queda entre os destinos ({us(que[0]['fob'] - que[0]['fob_ant'])})")
+    if len(out) < 2 and len(pe) > 1:
+        add(pe[1], "segundo maior destino do mês")
+    return out[:3]
+
+
+def resumo_insight(B) -> str:
+    """Uma ou duas frases sobre o que explica o mês, pela primeira regra que se aplica."""
+    E, E0, I, I0 = B.tot("export", B.ref), B.tot("export", B.ant), B.tot("import", B.ref), B.tot("import", B.ant)
+    achados = []
+    dif = E - E0
+    pe = B.lista("produtos", "export")
+    if dif and E0:
+        lista = (altas(pe, 2e7) if dif > 0 else quedas(pe, 2e7))[:3]
+        if len(lista) == 3:
+            soma = abs(sum(r["fob"] - r["fob_ant"] for r in lista))
+            if soma / abs(dif) >= 0.5:
+                nomes = junta(*[minusc(corta(r["curto"], 40)) for r in lista])
+                if soma / abs(dif) > 1:
+                    achados.append(f"{cap(nomes)} somaram {us(soma)} {'de alta' if dif > 0 else 'de queda'} nas exportações, mais do que o saldo líquido "
+                                   f"sobre {mes_nome(B.ant)} ({us(abs(dif))}).")
+                else:
+                    achados.append(f"{cap(nomes)} respondem por {nf(soma / abs(dif) * 100, 0)}% da {'alta' if dif > 0 else 'queda'} de {us(abs(dif))} "
+                                   f"nas exportações sobre {mes_nome(B.ant)}.")
+    s, s0 = E - I, E0 - I0
+    if s0 > 0 and s > 0 and abs(s / s0 - 1) >= 0.1:
+        achados.append(f"O saldo de {us(s)} é {'maior' if s > s0 else 'menor'} que o de {mes_nome(B.ant)} ({us(s0)}).")
+    pe_p = sorted((r for r in B.lista("paises", "export") if r["fob"] > 0), key=lambda r: -r["fob"])
+    if len(achados) < 2 and pe_p and E and pe_p[0]["fob"] / E >= 0.2:
+        achados.append(f"{pe_p[0]['nome']} absorveu {nf(pe_p[0]['fob'] / E * 100, 0)}% das exportações do mês.")
+    return " ".join(achados[:2])
+
+
+def resumo_links(B, parceiros: list[dict]) -> list[tuple[str, str]]:
+    pe = B.lista("produtos", "export")
+    L = [("/produtos/", "Todos os produtos"), ("/paises/", "Países"), ("/estados/", "Estados"), ("/portos/", "Portos")]
+    for r in (altas(pe, 2e7)[:1] + quedas(pe, 2e7)[:1]):
+        L.append((B.url_prod(r["codigo"]), corta(r["curto"], 40)))
+    L += [(p["url"], p["nome"]) for p in parceiros if p.get("url")]
+    vistos, out = set(), []
+    for h, t in L:
+        if h and h not in vistos:
+            vistos.add(h)
+            out.append((h, t))
+    return out
+
+
+def texto_x(B) -> str:
+    """Post curto para o X: cabe em 280 caracteres (o link conta 23). Tira os extras, do menos para o mais importante, até caber."""
+    E, E0, I = B.tot("export", B.ref), B.tot("export", B.ant), B.tot("import", B.ref)
+    url = f"{BASE}/resumo/{B.ref}/"
+    p = pct(E, E0)
+    cabeca = f"Balança comercial em {mes_nome(B.ref)}: exportações de {us(E)}"
+    cabeca += f" ({'+' if p >= 0 else '−'}{nf(abs(p), 1)}% sobre {mes_nome(B.ant)})" if p is not None else ""
+    cabeca += f", importações de {us(I)} e saldo de {us(E - I)}."
+    ext = resumo_extremos(B)
+    extra = ext[0] if ext else ""
+    ps = B.lista("produtos", "export")
+    a = altas(ps, 2e7)[:1]
+    prod = f"Destaque: {minusc(corta(a[0]['curto'], 40))} (+{us(a[0]['fob'] - a[0]['fob_ant'])})." if a else ""
+    tags = "#comex #balançacomercial"
+    for usa in ((1, 1, 1), (1, 0, 1), (0, 1, 1), (1, 0, 0), (0, 0, 0)):
+        corpo = [cabeca] + ([extra] if usa[0] and extra else []) + ([prod] if usa[1] and prod else [])
+        texto = " ".join(corpo) + f"\n\n{url}" + (f"\n{tags}" if usa[2] else "")
+        if len(texto.replace(url, "x" * PESO_LINK_X)) <= LIMITE_X:
+            return texto
+    return f"{cabeca}\n\n{url}"
+
+
 def corpo_resumo(B, post: str) -> str:
+    parceiros, insight_ = resumo_parceiros(B), resumo_insight(B)
+    post_x = texto_x(B)
+    links_html = "".join(f'<li><a href="{h}">{esc(t)}</a></li>' for h, t in resumo_links(B, parceiros))
     E, E0, I, I0 = B.tot("export", B.ref), B.tot("export", B.ant), B.tot("import", B.ref), B.tot("import", B.ant)
     s, s0 = E - I, E0 - I0
     pe, pi = B.lista("produtos", "export"), B.lista("produtos", "import")
     sem_nd = lambda rs: [r for r in rs if r["nome"] != "UF não declarada"]
     return f"""<div class="card"><span class="eyebrow">Resumo do mês · {mes_nome(B.ref)}</span><h1>{esc(titulo_mes(B))}</h1>
 <img src="card.png" alt="Exportações, importações e saldo de {mes_nome(B.ref)}" width="1200" height="627" style="width:100%;height:auto;border-radius:8px;border:1px solid var(--line)">
-<p class="lede">{resumo_fluxo(B, "export")}</p><p class="lede">{resumo_fluxo(B, "import")}</p></div>
+<p class="lede">{esc(resumo_abertura(B))}</p><p class="lede">{resumo_fluxo(B, "export")}</p><p class="lede">{resumo_fluxo(B, "import")}</p></div>
 <div class="tiles">{tile("exp", "Exportações", nf(E / 1e9, 2), "US$ bi", chip(E, E0), "/exportacao/")}{tile("imp", "Importações", nf(I / 1e9, 2), "US$ bi", chip(I, I0), "/importacao/")}{tile("bal", "Saldo", nf(s / 1e9, 2), "US$ bi", f'<span class="chg flat">antes {nf(s0 / 1e9, 2)}</span>')}{tile("", "Corrente de comércio", nf((E + I) / 1e9, 2), "US$ bi", chip(E + I, E0 + I0))}</div>
 <div class="cols"><div class="card"><h2>Exportações que mais subiram</h2>{tabela(B, altas(pe, 2e7)[:5], "produto", E, "dif")}</div>
 <div class="card"><h2>Exportações que mais caíram</h2>{tabela(B, quedas(pe, 2e7)[:5], "produto", E, "dif")}</div></div>
@@ -2001,9 +2185,31 @@ def corpo_resumo(B, post: str) -> str:
 <div class="card"><h2>Importações que mais caíram</h2>{tabela(B, quedas(pi, 2e7)[:5], "produto", I, "dif")}</div></div>
 <div class="cols"><div class="card"><h2>Principais destinos</h2>{tabela(B, B.lista("paises", "export")[:5], "pais", E)}</div>
 <div class="card"><h2>Estados que mais exportaram</h2>{tabela(B, sem_nd(B.lista("estados", "export"))[:5], "estado", E)}</div></div>
-<div class="card"><h2>Compartilhe este resumo</h2><p class="small">Texto pronto para LinkedIn, WhatsApp ou e-mail.</p>
+{bloco_parceiros(parceiros)}{bloco_insight(insight_)}<div class="card"><h2>Para ir além</h2><ul class="links-resumo">{links_html}</ul></div>
+<div class="card"><details class="compartilhe"><summary><h2>Compartilhe este resumo</h2></summary>
+<p class="small">Textos prontos: uma versão curta, para o X, e uma maior, para o LinkedIn, o WhatsApp ou o e-mail.</p>
+<h3>Para o X</h3>
+<textarea id="post-x" class="fam-post" readonly rows="6" style="width:100%;font:inherit;font-size:.9rem;padding:10px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--ink)">{esc(post_x)}</textarea>
+<div><button type="button" class="fam-btn" data-copiar="post-x"><span>Copiar texto do X</span></button> <span class="small" data-copiar-msg aria-live="polite"></span></div>
+<h3>Para o LinkedIn</h3>
 <textarea id="post" readonly rows="12" style="width:100%;font:inherit;font-size:.9rem;padding:10px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--ink)">{esc(post)}</textarea>
-<button type="button" class="btn ghost" id="copy-post">Copiar texto</button><span class="msg" id="copy-post-msg" aria-live="polite"></span></div>"""
+<div><button type="button" class="fam-btn" data-copiar="post"><span>Copiar texto do LinkedIn</span></button> <span class="small" data-copiar-msg aria-live="polite"></span></div>
+</details></div>"""
+
+
+def bloco_parceiros(parceiros: list[dict]) -> str:
+    if not parceiros:
+        return ""
+    itens = ""
+    for p in parceiros:
+        resto = esc(p["texto"][len(p["nome"]):])
+        nome = f'<a href="{p["url"]}">{esc(p["nome"])}</a>' if p.get("url") else esc(p["nome"])
+        itens += f"<li>{nome}{resto}</li>"
+    return f'<div class="card"><h2>Parceiros em destaque</h2><p class="small">Destinos das exportações com os movimentos mais relevantes do mês</p><ul class="destaques">{itens}</ul></div>'
+
+
+def bloco_insight(txt: str) -> str:
+    return f'<div class="card"><h2>Em resumo</h2><p>{esc(txt)}</p></div>' if txt else ""
 
 
 def salva_resumo(B) -> dict:
