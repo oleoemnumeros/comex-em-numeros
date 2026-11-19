@@ -1,6 +1,7 @@
 """Planilha mensal grátis do Comex em Números (versão simples).
 
-Uso: python scripts/planilha.py [saída.xlsx]
+Uso: python scripts/planilha.py [saída.xlsx] [AAAA-MM]
+Sem mês, usa o último disponível. Meses anteriores saem das séries históricas (data/serie, data/municipios).
 Lê os mesmos dados do site (data/) e monta um .xlsx com abas organizadas.
 Variações, saldos, participações e preços médios são fórmulas, para quem quiser mexer.
 """
@@ -122,11 +123,26 @@ def aba_ranking(wb, titulo, sub, rotulo, linhas, ref, ant, com_kg=False, codigo=
     return ws
 
 
+def lista_serie(B, tipo, fl, i):
+    """Ranking de um mês qualquer a partir das séries: [{codigo, nome, fob, fob_ant, kg, kg_ant}]."""
+    out = []
+    for chave, x in (B.serie.get((tipo, fl)) or {}).items():
+        v, k = x.get("v") or [], x.get("k") or []
+        a, b = (v[i] if i < len(v) else 0), (v[i - 12] if i >= 12 and i - 12 < len(v) else 0)
+        if a or b:
+            out.append({"codigo": chave, "nome": chave, "fob": a, "fob_ant": b,
+                        "kg": (k[i] if i < len(k) else 0), "kg_ant": (k[i - 12] if i >= 12 and i - 12 < len(k) else 0)})
+    return sorted(out, key=lambda r: -r["fob"])
+
+
 def main():
     saida = Path(sys.argv[1]) if len(sys.argv) > 1 else g.RAIZ / "planilha.xlsx"
     d = json.loads((g.RAIZ / "data" / "dados.json").read_text(encoding="utf-8"))
     B = g.Base(d)
-    ref, ant = B.ref, B.ant
+    ref = sys.argv[2] if len(sys.argv) > 2 else B.ref
+    i_ref = B.meses.index(ref)
+    ant = f"{int(ref[:4]) - 1}-{ref[5:]}"
+    atual = ref == B.ref  # só o mês atual tem o recorte por meio de transporte
     wb = Workbook()
 
     # ---------------- Leia-me
@@ -142,7 +158,7 @@ def main():
     linhas = [
         ("Fonte", "Comex Stat, da Secretaria de Comércio Exterior (Secex/MDIC). Dados públicos."),
         ("Mês de referência", f"{mes_txt(ref)}, comparado com {mes_txt(ant)}."),
-        ("Atualização", f"Gerada em {B.d.get('gerado_em', '')[:10]}. Nova edição todo mês, quando a Secex divulga os dados."),
+        ("Atualização", f"Dados de {mes_txt(ref)} na versão mais recente da Secex (consulta de {B.d.get('gerado_em', '')[:10]}). Nova edição todo mês."),
         ("Moeda", "Dólares (US$) FOB: valor da mercadoria no embarque, sem frete e seguro."),
         ("Fórmulas", "Variações, saldos, fatias e preços médios são fórmulas: dá para filtrar, ordenar e reaproveitar."),
         ("Licença", "CC BY 4.0: pode usar e compartilhar, citando \"Comex em Números\" e o Comex Stat."),
@@ -157,7 +173,7 @@ def main():
         ("Estados", "Exportação e importação por estado."),
         ("Municípios", "Exportação e importação por município (domicílio fiscal da empresa)."),
         ("Portos", "Por onde as mercadorias saem e entram: portos, aeroportos e fronteiras."),
-        ("Transporte", "Valor por meio de transporte (marítimo, aéreo, rodoviário...)."),
+    ] + ([("Transporte", "Valor por meio de transporte (marítimo, aéreo, rodoviário...).")] if atual else []) + [
         ("", ""),
         ("Atenção", "Município = domicílio fiscal de quem exporta ou importa, nem sempre onde a mercadoria é produzida. "
                     "Porto = unidade da Receita onde a carga foi despachada. Preço médio = valor ÷ peso; mudanças de mix dentro do SH4 também o afetam."),
@@ -174,7 +190,8 @@ def main():
     ws = wb.create_sheet("Resumo")
     cabecalho(ws, f"Resumo · {mes_txt(ref)}", "US$ FOB. Saldo e corrente são fórmulas sobre exportação e importação.",
               [("Indicador", 30), (mc(ref), 18), (mc(ant), 18), ("Variação", 11)])
-    E, E0, I, I0 = B.tot("export", ref), B.tot("export", ant), B.tot("import", ref), B.tot("import", ant)
+    tot_m = {fl: {x["mes"]: x["fob"] for x in d["mensal"][fl]} for fl in ("export", "import")}
+    E, E0, I, I0 = tot_m["export"].get(ref, 0), tot_m["export"].get(ant, 0), tot_m["import"].get(ref, 0), tot_m["import"].get(ant, 0)
     ar = int(ref[:4])
     acum = {fl: [sum(x["fob"] for x in d["mensal"][fl] if x["mes"][:4] == str(a) and x["mes"][5:] <= ref[5:]) for a in (ar, ar - 1)]
             for fl in ("export", "import")}
@@ -207,7 +224,7 @@ def main():
                ("Exportação kg", 18), ("Importação kg", 18)])
     ex = {x["mes"]: x for x in d["mensal"]["export"]}
     im = {x["mes"]: x for x in d["mensal"]["import"]}
-    for i, m in enumerate(sorted(set(ex) | set(im)), 5):
+    for i, m in enumerate(sorted(m_ for m_ in set(ex) | set(im) if m_ <= ref), 5):
         ws.cell(row=i, column=1, value=m)
         ws.cell(row=i, column=2, value=round(ex.get(m, {}).get("fob", 0)))
         ws.cell(row=i, column=3, value=round(im.get(m, {}).get("fob", 0)))
@@ -221,7 +238,7 @@ def main():
     # ---------------- Produtos
     for fl, tit in (("export", "Exportação por produto"), ("import", "Importação por produto")):
         lst = []
-        for r in B.lista("produtos", fl):
+        for r in lista_serie(B, "produtos", fl, i_ref):
             p = B.prod.get(r["codigo"], {})
             lst.append({"codigo": r["codigo"], "nome": (p.get("curto") or r["nome"]).split(" (SH4")[0], "fob": r["fob"],
                         "fob_ant": r["fob_ant"], "kg": r.get("kg", 0), "kg_ant": r.get("kg_ant", 0)})
@@ -240,7 +257,7 @@ def main():
         if linhas_ext is None:
             reg = {}
             for fl in ("export", "import"):
-                for r in B.lista(chave, fl):
+                for r in lista_serie(B, chave, fl, i_ref):
                     if filtro(r["nome"]):
                         reg.setdefault(r["nome"], {})[fl] = r
             linhas_ext = [(n, None, v.get("export", {}), v.get("import", {})) for n, v in reg.items()]
@@ -279,15 +296,25 @@ def main():
     lado_a_lado("Países", "Comércio do Brasil com cada país. Saldo positivo = o Brasil vendeu mais do que comprou.", "País", "paises")
     lado_a_lado("Estados", "Estado de origem da exportação e de destino da importação.", "Estado", "estados")
     mun = []
-    for r in B.mun.values():
-        e, i_ = r.get("export") or {}, r.get("import") or {}
-        if (e.get("fob") or 0) + (e.get("fob_ant") or 0) + (i_.get("fob") or 0) + (i_.get("fob_ant") or 0) > 0:
-            mun.append((r["cidade"], r["uf"], e, i_))
+    for nome in set(B.mun_serie["export"]) | set(B.mun_serie["import"]):
+        reg = {}
+        for fl in ("export", "import"):
+            v = B.mun_serie[fl].get(nome) or []
+            reg[fl] = {"fob": v[i_ref] if i_ref < len(v) else 0, "fob_ant": v[i_ref - 12] if 12 <= i_ref < len(v) + 12 and i_ref - 12 < len(v) else 0}
+        if sum(reg["export"].values()) + sum(reg["import"].values()) > 0:
+            cid, _, uf = nome.rpartition(" - ")
+            mun.append((cid or nome, uf, reg["export"], reg["import"]))
     lado_a_lado("Municípios", "Domicílio fiscal da empresa que exportou ou importou (nem sempre onde a mercadoria é produzida).",
                 "Município", None, extra="UF", linhas_ext=mun)
     lado_a_lado("Portos", "Unidade da Receita Federal onde a carga foi despachada: porto, aeroporto ou posto de fronteira.",
                 "Porto ou local", "portos")
-    lado_a_lado("Transporte", "Meio de transporte da mercadoria.", "Meio de transporte", "vias")
+    if atual:
+        reg = {}
+        for fl in ("export", "import"):
+            for r in B.lista("vias", fl):
+                reg.setdefault(r["nome"], {})[fl] = r
+        lado_a_lado("Transporte", "Meio de transporte da mercadoria.", "Meio de transporte", None,
+                    linhas_ext=[(n, None, v.get("export", {}), v.get("import", {})) for n, v in reg.items()])
 
     for w in wb.worksheets:
         w.sheet_properties.tabColor = AZUL if w.title in ("Leia-me", "Resumo") else None
