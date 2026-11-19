@@ -86,7 +86,7 @@ td a:hover{text-decoration:underline}
 .note{border-left:3px solid var(--imp);padding:8px 12px;background:color-mix(in srgb,var(--imp) 8%,transparent);border-radius:0 6px 6px 0;font-size:.9rem}
 .cta{display:grid;gap:20px}
 @media (min-width:860px){.cta{grid-template-columns:1fr 1fr}}
-button.btn{font:inherit;font-weight:600;font-size:.92rem;border:1px solid var(--exp);background:var(--exp);color:var(--surface);padding:9px 14px;border-radius:8px;cursor:pointer;width:fit-content}
+button.btn,a.btn{display:inline-block;text-decoration:none;font:inherit;font-weight:600;font-size:.92rem;border:1px solid var(--exp);background:var(--exp);color:var(--surface);padding:9px 14px;border-radius:8px;cursor:pointer;width:fit-content}
 button.btn.ghost{background:transparent;color:var(--exp)}
 code.embed{display:block;font-size:.78rem;background:var(--chip);padding:10px;border-radius:6px;overflow-x:auto;white-space:pre;color:var(--ink)}
 form.nl{display:flex;gap:8px;flex-wrap:wrap}

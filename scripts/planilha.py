@@ -1,7 +1,10 @@
 """Planilha mensal grátis do Comex em Números (versão simples).
 
-Uso: python scripts/planilha.py [saída.xlsx] [AAAA-MM]
-Sem mês, usa o último disponível. Meses anteriores saem das séries históricas (data/serie, data/municipios).
+Uso:
+    python scripts/planilha.py [saída.xlsx] [AAAA-MM]   gera uma edição (sem mês: a do último mês)
+    python scripts/planilha.py --faltam                  sai com 0 se falta alguma edição em data/planilhas
+    python scripts/planilha.py --gerar                   gera as que faltam e calcula as fórmulas no LibreOffice
+Meses anteriores saem das séries históricas (data/serie, data/municipios).
 Lê os mesmos dados do site (data/) e monta um .xlsx com abas organizadas.
 Variações, saldos, participações e preços médios são fórmulas, para quem quiser mexer.
 """
@@ -135,7 +138,57 @@ def lista_serie(B, tipo, fl, i):
     return sorted(out, key=lambda r: -r["fob"])
 
 
+PASTA = g.RAIZ / "data" / "planilhas"
+PRIMEIRA = "2026-01"
+
+
+def nome_arquivo(ym: str) -> str:
+    return f"comex-em-numeros-{ym}.xlsx"
+
+
+def faltando(ref: str) -> list[str]:
+    meses, a, m = [], int(PRIMEIRA[:4]), int(PRIMEIRA[5:])
+    while f"{a}-{m:02d}" <= ref:
+        ym = f"{a}-{m:02d}"
+        if not (PASTA / nome_arquivo(ym)).exists():
+            meses.append(ym)
+        a, m = (a + 1, 1) if m == 12 else (a, m + 1)
+    return meses
+
+
+def calcula(arq: Path) -> None:
+    """Abre no LibreOffice e salva de novo: as fórmulas ficam com o valor calculado (aparece até em visualizadores simples)."""
+    import shutil
+    import subprocess
+    import tempfile
+    exe = shutil.which("soffice") or shutil.which("libreoffice")
+    if not exe:
+        print("  LibreOffice não encontrado: a planilha sai sem os valores pré-calculados (o Excel calcula ao abrir)")
+        return
+    with tempfile.TemporaryDirectory() as tmp:
+        subprocess.run([exe, "--headless", "--calc", "--convert-to", "xlsx", "--outdir", tmp, str(arq)],
+                       check=True, timeout=300, capture_output=True)
+        shutil.move(str(Path(tmp) / arq.name), str(arq))
+
+
 def main():
+    if len(sys.argv) > 1 and sys.argv[1] in ("--faltam", "--gerar"):
+        d = json.loads((g.RAIZ / "data" / "dados.json").read_text(encoding="utf-8"))
+        falta = faltando(d["mes"])
+        if sys.argv[1] == "--faltam":
+            print("Faltam:", ", ".join(falta) if falta else "nenhuma")
+            sys.exit(0 if falta else 1)
+        PASTA.mkdir(parents=True, exist_ok=True)
+        for ym in falta:
+            arq = PASTA / nome_arquivo(ym)
+            sys.argv = [sys.argv[0], str(arq), ym]
+            gera()
+            calcula(arq)
+        return
+    gera()
+
+
+def gera():
     saida = Path(sys.argv[1]) if len(sys.argv) > 1 else g.RAIZ / "planilha.xlsx"
     d = json.loads((g.RAIZ / "data" / "dados.json").read_text(encoding="utf-8"))
     B = g.Base(d)

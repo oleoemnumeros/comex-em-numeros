@@ -1199,7 +1199,7 @@ def pagina(B, caminho, titulo, descricao, corpo, ativo="", jsonld=None, migalhas
 <footer><div>
 <span><strong>Comex em Números</strong> · versão beta</span>
 <span>Fonte: Comex Stat, Secex/MDIC. Valores em US$ FOB. Variações sempre contra o mesmo mês do ano anterior ({mes_nome(B.ant)}). Por estado, vale a UF de origem do produto exportado ou de destino do importado.</span>
-<span><a href="/resumo/">Resumos mensais</a> · <a href="/produtos/">Todos os produtos</a> · <a href="/paises/">Países</a> · <a href="/estados/">Estados</a> · <a href="/municipios/">Municípios</a> · <a href="/portos/">Portos</a> · <a href="/sobre/">Como funciona</a> · <a href="/sugestoes/">Sugestões e críticas</a> · <a href="/contato/">Contato</a> · <a href="/privacidade/">Privacidade</a></span>
+<span><a href="/resumo/">Resumos mensais</a> · <a href="/planilhas/">Planilhas grátis</a> · <a href="/produtos/">Todos os produtos</a> · <a href="/paises/">Países</a> · <a href="/estados/">Estados</a> · <a href="/municipios/">Municípios</a> · <a href="/portos/">Portos</a> · <a href="/sobre/">Como funciona</a> · <a href="/sugestoes/">Sugestões e críticas</a> · <a href="/contato/">Contato</a> · <a href="/privacidade/">Privacidade</a></span>
 </div>{familia_html()}</footer>
 <script src="/assets/app.js?v={v}" defer></script>
 <script src="/assets/familia.js?v={v}" defer></script>
@@ -1238,6 +1238,68 @@ def resumo_fluxo(B, fl: str) -> str:
 
 
 # ---------------------------------------------------------------- páginas
+def edicoes_planilha() -> list[tuple[str, Path]]:
+    pasta = RAIZ / "data" / "planilhas"
+    out = []
+    for arq in sorted(pasta.glob("comex-em-numeros-*.xlsx"), reverse=True):
+        ym = arq.stem.rsplit("-", 2)
+        out.append((f"{ym[-2]}-{ym[-1]}", arq))
+    return out
+
+
+def link_planilha(ym: str, arq: Path, texto: str, cls: str = "") -> str:
+    kb = arq.stat().st_size / 1024
+    tam = f"{nf(kb / 1024, 1)} MB" if kb >= 1024 else f"{nf(kb, 0)} KB"
+    return (f'<a{(" class=" + chr(34) + cls + chr(34)) if cls else ""} href="/planilhas/{arq.name}" download '
+            f'data-goatcounter-click="planilha-{ym}" data-goatcounter-title="Planilha {ym}">{texto}</a> <span class="small">(Excel, {tam})</span>')
+
+
+def chamada_planilha(B) -> str:
+    eds = edicoes_planilha()
+    if not eds:
+        return ""
+    ym, arq = eds[0]
+    return (f'<div class="card"><h2>Planilha grátis de {mes_nome(ym)}</h2><p class="small">Todos os produtos, países, estados, '
+            f'municípios e portos em um arquivo de Excel organizado, com variações e preços médios em fórmulas. '
+            f'Uma edição por mês, desde janeiro de 2026.</p><p>{link_planilha(ym, arq, "Baixar a planilha", "btn")} · '
+            f'<a href="/planilhas/">Todas as edições</a></p></div>')
+
+
+def pg_planilhas(B) -> str:
+    eds = edicoes_planilha()
+    ym0, arq0 = eds[0]
+    por_ano: dict = {}
+    for ym, arq in eds:
+        por_ano.setdefault(ym[:4], []).append(f"<li>{link_planilha(ym, arq, cap(mes_nome(ym)))}</li>")
+    lista = "".join(f'<h2>{a}</h2><ul class="plain">{"".join(v)}</ul>' for a, v in sorted(por_ano.items(), reverse=True))
+    abas = [("Leia-me", "fonte, licença e o que tem em cada aba"),
+            ("Resumo", "exportação, importação, saldo e corrente no mês e no acumulado do ano"),
+            ("Série mensal", "totais do Brasil mês a mês desde 2015, em US$ e em peso"),
+            ("Exportação e Importação por produto", "todos os produtos (SH4), com peso, preço médio e fatia do total"),
+            ("Países, Estados, Municípios e Portos", "exportação, importação, saldo e corrente de cada um"),
+            ("Transporte", "valor por meio de transporte (a partir da edição de outubro de 2026)")]
+    c = f"""<div class="card"><span class="eyebrow">Planilhas · grátis</span><h1>Planilhas mensais do comércio exterior do Brasil</h1>
+<p class="lede">Os dados oficiais do Comex Stat organizados em um arquivo de Excel por mês: produtos, países, estados, municípios e portos, com a comparação com o mesmo mês do ano anterior. Grátis, sem cadastro.</p>
+<p>{link_planilha(ym0, arq0, f"Baixar a edição de {mes_nome(ym0)}", "btn")}</p></div>
+<div class="two"><div class="card"><h2>O que tem em cada planilha</h2><ul class="plain">{"".join(f"<li><strong>{esc(a)}</strong>: {esc(b)}.</li>" for a, b in abas)}</ul>
+<p class="small">Variações, saldos, fatias e preços médios são fórmulas, e todas as abas têm filtro: dá para ordenar e reaproveitar à vontade.
+Os valores estão em dólares FOB (sem frete e seguro).</p></div>
+<div class="card">{lista}</div></div>
+<div class="card"><h2>Pode usar?</h2><p>Pode. Os dados são públicos, da Secretaria de Comércio Exterior (Secex/MDIC). A organização é do Comex em Números, sob a licença
+<a href="{LICENCA}">CC BY 4.0</a>: use, altere e compartilhe, citando "Comex em Números" e o Comex Stat como fonte.</p>
+<p class="small">As edições usam a versão mais recente dos dados da Secex, que revisa os meses anteriores. Por isso, um número pode diferir um pouco do divulgado na época.
+Município é o domicílio fiscal da empresa, e porto é a unidade da Receita onde a carga foi despachada.</p></div>"""
+    desc = (f"Planilhas grátis em Excel com as exportações e importações do Brasil mês a mês: produtos, países, estados, municípios e portos. "
+            f"Edição mais recente: {mes_nome(ym0)}.")
+    ld = {"@context": "https://schema.org", "@type": "Dataset", "name": "Planilhas mensais do comércio exterior do Brasil",
+          "description": desc, "url": BASE + "/planilhas/", "inLanguage": "pt-BR", "license": LICENCA, "isAccessibleForFree": True,
+          "creator": {"@type": "Organization", "name": "Comex em Números", "url": BASE + "/"}, "isBasedOn": "https://comexstat.mdic.gov.br/",
+          "distribution": [{"@type": "DataDownload", "encodingFormat": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                            "contentUrl": f"{BASE}/planilhas/{arq.name}", "name": f"Planilha {ym}"} for ym, arq in eds]}
+    return pagina(B, "/planilhas/", "Planilhas de exportação e importação do Brasil em Excel (grátis) | Comex em Números", desc, c,
+                  "/planilhas/", ld, migalhas=[(None, "Planilhas")])
+
+
 def pg_inicio(B) -> str:
     E, E0, I, I0 = B.tot("export", B.ref), B.tot("export", B.ant), B.tot("import", B.ref), B.tot("import", B.ant)
     s, s0 = E - I, E0 - I0
@@ -1268,6 +1330,7 @@ def pg_inicio(B) -> str:
 <tr><td>Importações</td><td class="r">{nf(acI["fob"] / 1e9, 2)}</td><td class="r">{chip(acI["fob"], acI["fob_ant"])}</td></tr>
 <tr><td><strong>Saldo</strong></td><td class="r"><strong>{nf((acE["fob"] - acI["fob"]) / 1e9, 2)}</strong></td><td class="r">{ac_chip}</td></tr></tbody></table></div></div>
 {serie_brasil}
+{chamada_planilha(B)}
 <div class="two"><div class="card"><div class="row-head"><h2>O que mais puxou as exportações</h2><a class="small" href="/exportacao/">Ver todos →</a></div><p class="small">Maiores aumentos em US$ contra {mes_nome(B.ant)}.</p>{tabela(B, altas(ps, 2e7)[:5], "produto", E, "dif")}</div>
 <div class="card"><h2>Exportações por setor</h2>{hbars([r for r in B.d["setores"]["export"] if r["fob"] > 0], "var(--exp)")}</div></div>
 <div class="two"><div class="card"><div class="row-head"><h2>Principais destinos</h2><a class="small" href="/paises/">Todos os países →</a></div>{tabela(B, B.lista("paises", "export")[:6], "pais", E)}</div>
@@ -2497,7 +2560,7 @@ def main() -> None:
         return
     B = Base(json.loads(DADOS.read_text(encoding="utf-8")))
     B.par_url = {k: v for k, v in B.par_url.items() if ativo_prod(B.prod[k[0]])}
-    for pasta in ("produto", "pais", "estado", "porto", "municipio", "municipios", "exportacao", "importacao", "produtos", "paises", "estados", "portos", "sobre", "embed", "assets", "resumo"):
+    for pasta in ("produto", "pais", "estado", "porto", "municipio", "municipios", "exportacao", "importacao", "produtos", "paises", "estados", "portos", "sobre", "embed", "assets", "resumo", "planilhas"):
         shutil.rmtree(SAIDA / pasta, ignore_errors=True)
     (SAIDA / "assets").mkdir(parents=True, exist_ok=True)
     shutil.copy(SITE / "estilo.css", SAIDA / "assets" / "estilo.css")
@@ -2519,6 +2582,11 @@ def main() -> None:
     escreve("/paises/", pg_lista(B, "pais"), urls)
     escreve("/estados/", pg_lista(B, "estado"), urls)
     escreve("/sobre/", pg_sobre(B), urls)
+    if edicoes_planilha():
+        (SAIDA / "planilhas").mkdir(parents=True, exist_ok=True)
+        for _, arq in edicoes_planilha():
+            shutil.copy2(arq, SAIDA / "planilhas" / arq.name)
+        escreve("/planilhas/", pg_planilhas(B), urls)
     escreve("/sugestoes/", pg_sugestoes(B), urls)
     escreve("/contato/", pg_contato(B), urls)
     escreve("/privacidade/", pg_privacidade(B), urls)
