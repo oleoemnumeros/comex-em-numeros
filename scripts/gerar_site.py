@@ -1059,8 +1059,10 @@ def bloco_serie(B, ev, iv, ek=None, rotulo="das exportações", url=None, ik=Non
 LEGENDA = ('<div class="legend"><span><i style="background:var(--exp)"></i>Exportação</span>'
            '<span><i style="background:var(--imp)"></i>Importação</span></div>')
 
-NAV = [("/", "Início"), ("/exportacao/", "Exportação"), ("/importacao/", "Importação"),
-       ("/produtos/", "Produtos"), ("/paises/", "Países"), ("/estados/", "Estados"), ("/municipios/", "Municípios"), ("/portos/", "Portos"), ("/planilhas/", "Planilhas"), ("/sobre/", "Como funciona")]
+# Ordem padrão da Família em Números: Início, Resumos, temas do portal, lugares, ferramentas e downloads, Como funciona
+NAV = [("/", "Início"), ("/resumo/", "Resumos"), ("/exportacao/", "Exportação"), ("/importacao/", "Importação"),
+       ("/produtos/", "Produtos"), ("/paises/", "Países"), ("/estados/", "Estados"), ("/municipios/", "Municípios"), ("/portos/", "Portos"),
+       ("/planilhas/", "Planilhas"), ("/sobre/", "Como funciona")]
 
 
 # ---------------------------------------------------------------- Continue explorando (entre os portais)
@@ -2323,7 +2325,7 @@ def pgs_resumos(B, urls) -> list[dict]:
         ld = {"@context": "https://schema.org", "@type": "Article", "headline": sn["titulo"], "inLanguage": "pt-BR",
               "datePublished": sn["gerado_em"], "author": {"@type": "Organization", "name": "Comex em Números", "url": BASE + "/"},
               "image": img or BASE + "/assets/og.png", "mainEntityOfPage": BASE + cam}
-        escreve(cam, pagina(B, cam, f"{sn['titulo']} | Comex em Números", sn["descricao"], corpo, "/", ld,
+        escreve(cam, pagina(B, cam, f"{sn['titulo']} | Comex em Números", sn["descricao"], corpo, "/resumo/", ld,
                             migalhas=[("/resumo/", "Resumos mensais"), (None, mes_nome(sn["mes"]))], imagem=img), urls)
     itens = "".join(f'<li><a href="/resumo/{x["mes"]}/">{cap(mes_nome(x["mes"]))}</a>: {esc(x["titulo"])}</li>' for x in snaps)
     corpo = (f'<div class="card"><span class="eyebrow">Resumos mensais</span><h1>A balança comercial mês a mês</h1>'
@@ -2331,7 +2333,7 @@ def pgs_resumos(B, urls) -> list[dict]:
              f'Também dá para seguir pelo <a href="/feed.xml">feed RSS</a>.</p><ul class="plain">{itens}</ul></div>')
     escreve("/resumo/", pagina(B, "/resumo/", "Resumos mensais da balança comercial | Comex em Números",
                                "Resumo mensal da balança comercial brasileira: exportações, importações, saldo, maiores altas e quedas.",
-                               corpo, "/", migalhas=[(None, "Resumos mensais")]), urls)
+                               corpo, "/resumo/", migalhas=[(None, "Resumos mensais")]), urls)
     return snaps
 
 
