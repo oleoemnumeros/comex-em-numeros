@@ -1060,7 +1060,7 @@ LEGENDA = ('<div class="legend"><span><i style="background:var(--exp)"></i>Expor
            '<span><i style="background:var(--imp)"></i>Importação</span></div>')
 
 NAV = [("/", "Início"), ("/exportacao/", "Exportação"), ("/importacao/", "Importação"),
-       ("/produtos/", "Produtos"), ("/paises/", "Países"), ("/estados/", "Estados"), ("/municipios/", "Municípios"), ("/portos/", "Portos"), ("/sobre/", "Como funciona")]
+       ("/produtos/", "Produtos"), ("/paises/", "Países"), ("/estados/", "Estados"), ("/municipios/", "Municípios"), ("/portos/", "Portos"), ("/planilhas/", "Planilhas"), ("/sobre/", "Como funciona")]
 
 
 # ---------------------------------------------------------------- Continue explorando (entre os portais)
