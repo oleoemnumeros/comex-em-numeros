@@ -19,10 +19,7 @@ import unicodedata
 from email.utils import format_datetime
 from pathlib import Path
 
-try:  # a imagem do mês precisa do Pillow; sem ele o site sai igual, só sem a imagem
-    from card import gera_card
-except ImportError:  # pragma: no cover
-    gera_card = None
+from familia_card import TEXTO_COMPARTILHE, bloco_imagem, gera_card, sem_imagem, seta  # imagem do resumo, igual em todos os portais (sem Pillow, sai sem imagem)
 
 RAIZ = Path(__file__).resolve().parent.parent
 SITE = RAIZ / "site"
@@ -2241,7 +2238,6 @@ def corpo_resumo(B, post: str) -> str:
     pe, pi = B.lista("produtos", "export"), B.lista("produtos", "import")
     sem_nd = lambda rs: [r for r in rs if r["nome"] != "UF não declarada"]
     return f"""<div class="card"><span class="eyebrow">Resumo do mês · {mes_nome(B.ref)}</span><h1>{esc(titulo_mes(B))}</h1>
-<img src="card.png" alt="Exportações, importações e saldo de {mes_nome(B.ref)}" width="1200" height="627" style="width:100%;height:auto;border-radius:8px;border:1px solid var(--line)">
 <p class="lede">{esc(resumo_abertura(B))}</p><p class="lede">{resumo_fluxo(B, "export")}</p><p class="lede">{resumo_fluxo(B, "import")}</p></div>
 <div class="tiles">{tile("exp", "Exportações", nf(E / 1e9, 2), "US$ bi", chip(E, E0), "/exportacao/")}{tile("imp", "Importações", nf(I / 1e9, 2), "US$ bi", chip(I, I0), "/importacao/")}{tile("bal", "Saldo", nf(s / 1e9, 2), "US$ bi", f'<span class="chg flat">antes {nf(s0 / 1e9, 2)}</span>')}{tile("", "Corrente de comércio", nf((E + I) / 1e9, 2), "US$ bi", chip(E + I, E0 + I0))}</div>
 <div class="cols"><div class="card"><h2>Exportações que mais subiram</h2>{tabela(B, altas(pe, 2e7)[:5], "produto", E, "dif")}</div>
@@ -2252,7 +2248,8 @@ def corpo_resumo(B, post: str) -> str:
 <div class="card"><h2>Estados que mais exportaram</h2>{tabela(B, sem_nd(B.lista("estados", "export"))[:5], "estado", E)}</div></div>
 {bloco_parceiros(parceiros)}{bloco_insight(insight_)}<div class="card"><h2>Para ir além</h2><ul class="links-resumo">{links_html}</ul></div>
 <div class="card"><details class="compartilhe"><summary><h2>Compartilhe este resumo</h2></summary>
-<p class="small">Textos prontos: uma versão curta, para o X, e uma maior, para o LinkedIn, o WhatsApp ou o e-mail.</p>
+<p class="small">{TEXTO_COMPARTILHE}</p>
+{bloco_imagem(f"comex-em-numeros-resumo-{B.ref}.png", f"Exportações, importações e saldo de {mes_nome(B.ref)}")}
 <h3>Para o X</h3>
 <textarea id="post-x" class="fam-post" readonly rows="6" style="width:100%;font:inherit;font-size:.9rem;padding:10px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--ink)">{esc(post_x)}</textarea>
 <div><button type="button" class="fam-btn" data-copiar="post-x"><span>Copiar texto do X</span></button> <span class="small" data-copiar-msg aria-live="polite"></span></div>
@@ -2291,23 +2288,24 @@ def salva_resumo(B) -> dict:
     if arq.exists():  # mantém a data da primeira publicação do mês (o feed não repete o post)
         snap["gerado_em"] = json.loads(arq.read_text(encoding="utf-8")).get("gerado_em", snap["gerado_em"])
     arq.write_text(json.dumps(snap, ensure_ascii=False, indent=0), encoding="utf-8")
-    if gera_card:
-        ano, mes = int(B.ref[:4]), int(B.ref[5:])
-        barras = []
-        for i in range(12, -1, -1):
-            y, m = ano, mes - i
-            while m <= 0:
-                m += 12
-                y -= 1
-            k = f"{y}-{m:02d}"
-            barras.append((MES_CURTO[m - 1], B.tot("export", k), B.tot("import", k)))
-        s, s0 = E - I, E0 - B.tot("import", B.ant)
-        pE, pI = pct(E, E0) or 0, pct(I, B.tot("import", B.ant)) or 0
-        gera_card(RESUMOS / f"{B.ref}.png", f"Balança comercial · {mes_nome(B.ref)}",
-                  [("Exportações (US$)", f"{nf(E / 1e9, 2)} bi", f"{'▲' if pE >= 0 else '▼'} {nf(abs(pE), 1)}%", pE >= 0),
-                   ("Importações (US$)", f"{nf(I / 1e9, 2)} bi", f"{'▲' if pI >= 0 else '▼'} {nf(abs(pI), 1)}%", pI >= 0),
-                   ("Saldo (US$)", f"{nf(s / 1e9, 2)} bi", f"antes: {nf(s0 / 1e9, 2)} bi", None)],
-                  barras, f"Fonte: Comex Stat (Secex/MDIC) · comexemnumeros.com.br/resumo/{B.ref}/")
+    ano, mes = int(B.ref[:4]), int(B.ref[5:])
+    barras = []
+    for i in range(12, -1, -1):
+        y, m = ano, mes - i
+        while m <= 0:
+            m += 12
+            y -= 1
+        k = f"{y}-{m:02d}"
+        barras.append((MES_CURTO[m - 1], [B.tot("export", k), B.tot("import", k)]))
+    s, s0 = E - I, E0 - B.tot("import", B.ant)
+    pE, pI = pct(E, E0) or 0, pct(I, B.tot("import", B.ant)) or 0
+    antes = f"{MES_CURTO[mes - 1]}/{(ano - 1) % 100:02d}"
+    gera_card(RESUMOS / f"{B.ref}.png", "Comex em Números", PORTAIS["comex"][2], f"Balança comercial · {mes_nome(B.ref)}",
+              [("Exportações (US$)", f"{nf(E / 1e9, 2)} bi", f"{seta(pE)} {nf(abs(pE), 1)}% sobre {antes}", pE >= 0),
+               ("Importações (US$)", f"{nf(I / 1e9, 2)} bi", f"{seta(pI)} {nf(abs(pI), 1)}% sobre {antes}", None),
+               ("Saldo (US$)", f"{nf(s / 1e9, 2)} bi", f"em {antes}: {nf(s0 / 1e9, 2)} bi", None)],
+              barras, [("Exportações", "#0B6BB5"), ("Importações", "#B9660F")],
+              f"Fonte: Comex Stat (Secex/MDIC) · comexemnumeros.com.br/resumo/{B.ref}/")
     return snap
 
 
@@ -2321,7 +2319,7 @@ def pgs_resumos(B, urls) -> list[dict]:
             (SAIDA / "resumo" / sn["mes"]).mkdir(parents=True, exist_ok=True)
             shutil.copy(png, SAIDA / "resumo" / sn["mes"] / "card.png")
             img = f"{BASE}{cam}card.png"
-        corpo = sn["corpo"] if img else sn["corpo"].replace('<img src="card.png"', '<img hidden src="card.png"')
+        corpo = sn["corpo"] if img else sem_imagem(sn["corpo"]).replace('<img src="card.png"', '<img hidden src="card.png"')
         ld = {"@context": "https://schema.org", "@type": "Article", "headline": sn["titulo"], "inLanguage": "pt-BR",
               "datePublished": sn["gerado_em"], "author": {"@type": "Organization", "name": "Comex em Números", "url": BASE + "/"},
               "image": img or BASE + "/assets/og.png", "mainEntityOfPage": BASE + cam}
