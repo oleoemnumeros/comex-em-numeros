@@ -22,6 +22,14 @@ from pathlib import Path
 from familia_card import TEXTO_COMPARTILHE, bloco_imagem, gera_card, sem_imagem, seta  # imagem do resumo, igual em todos os portais (sem Pillow, sai sem imagem)
 
 RAIZ = Path(__file__).resolve().parent.parent
+# AdSense: coloque o código do editor (ex.: pub-1234567890123456) em adsense.txt na raiz do repositório; vazio ou ausente = sem anúncios
+_AD = RAIZ / "adsense.txt"
+ADSENSE_ID = re.sub(r"^(ca-)?", "", _AD.read_text(encoding="utf-8").strip()) if _AD.exists() else ""
+if ADSENSE_ID and not re.fullmatch(r"pub-\d{10,20}", ADSENSE_ID):
+    print(f"Aviso: adsense.txt inválido ({ADSENSE_ID!r}); anúncios desligados")
+    ADSENSE_ID = ""
+ADS_HEAD = (f'<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-{ADSENSE_ID}" crossorigin="anonymous"></script>'
+            if ADSENSE_ID else "")
 SITE = RAIZ / "site"
 DADOS = RAIZ / "data" / "dados.json"
 RESUMOS = RAIZ / "data" / "resumos"
@@ -1182,6 +1190,7 @@ def pagina(B, caminho, titulo, descricao, corpo, ativo="", jsonld=None, migalhas
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Condensed:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/assets/estilo.css?v={v}">
+{ADS_HEAD}
 {ld}
 </head>
 <body>
@@ -2638,6 +2647,8 @@ def main() -> None:
     sm += [f"<url><loc>{BASE}{u}</loc><lastmod>{hoje}</lastmod></url>" for u in urls]
     sm.append("</urlset>")
     (SAIDA / "sitemap.xml").write_text("\n".join(sm), encoding="utf-8")
+    if ADSENSE_ID:
+        (SAIDA / "ads.txt").write_text(f"google.com, {ADSENSE_ID}, DIRECT, f08c47fec0942fa0\n", encoding="utf-8")
     (SAIDA / "robots.txt").write_text(f"User-agent: *\nAllow: /\nDisallow: /embed/\n\nSitemap: {BASE}/sitemap.xml\n", encoding="utf-8")
     (SAIDA / "llms.txt").write_text(LLMS_TXT.replace("__BASE__", BASE), encoding="utf-8")
     (SAIDA / "404.html").write_text(pg_404(), encoding="utf-8")
