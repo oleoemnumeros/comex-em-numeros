@@ -2229,10 +2229,10 @@ def texto_x(B) -> str:
     ps = B.lista("produtos", "export")
     a = altas(ps, 2e7)[:1]
     prod = f"Destaque: {minusc(corta(a[0]['curto'], 40))} (+{us(a[0]['fob'] - a[0]['fob_ant'])})." if a else ""
-    tags = "#comex #balançacomercial"
+    tags = ""   # posts do X sem hashtags
     for usa in ((1, 1, 1), (1, 0, 1), (0, 1, 1), (1, 0, 0), (0, 0, 0)):
         corpo = [cabeca] + ([extra] if usa[0] and extra else []) + ([prod] if usa[1] and prod else [])
-        texto = " ".join(corpo) + f"\n\n{url}" + (f"\n{tags}" if usa[2] else "")
+        texto = " ".join(corpo) + f"\n\n{url}" + (f"\n{tags}" if usa[2] and tags else "")
         if len(texto.replace(url, "x" * PESO_LINK_X)) <= LIMITE_X:
             return texto
     return f"{cabeca}\n\n{url}"
@@ -2327,6 +2327,9 @@ def pgs_resumos(B, urls) -> list[dict]:
         if png.exists():
             (SAIDA / "resumo" / sn["mes"]).mkdir(parents=True, exist_ok=True)
             shutil.copy(png, SAIDA / "resumo" / sn["mes"] / "card.png")
+            ig = png.with_name(png.stem + "-instagram.png")
+            if ig.exists():
+                shutil.copy(ig, SAIDA / "resumo" / sn["mes"] / "card-instagram.png")
             img = f"{BASE}{cam}card.png"
         corpo = sn["corpo"] if img else sem_imagem(sn["corpo"]).replace('<img src="card.png"', '<img hidden src="card.png"')
         ld = {"@context": "https://schema.org", "@type": "Article", "headline": sn["titulo"], "inLanguage": "pt-BR",
