@@ -1574,10 +1574,13 @@ def pg_produto(B, p: dict) -> str:
 {preco_html}
 {"".join(secoes)}
 {serie_html}"""
-    t = f"{cap(nome)}: exportação e importação | Comex em Números"
-    if len(t) > 70:
-        t = f"{corta(cap(nome.split(' (SH4')[0]), 36)} (SH4 {cod}): exportação e importação"
     nome_d = minusc(nome.split(" (SH4")[0])
+    # título no formato da busca ("exportação de soja 2026", "quanto o Brasil exporta de café")
+    ano = B.ref[:4]
+    fl_t = "Exportação" if E >= I else "Importação"
+    t = f"{fl_t} de {nome_d} do Brasil em {ano}: quanto e {'para onde' if E >= I else 'de onde'}"
+    if len(t) > 72:
+        t = f"{fl_t} de {corta(nome_d, 40)} em {ano} (SH4 {cod})"
     if not E and not I:
         desc = (f"{cap(nome_d)}: sem comércio em {mes_curto(B.ref)}. Um ano antes, "
                 + junta(f"exportações de {us(E0)}" if E0 else "", f"importações de {us(I0)}" if I0 else "") + ". Série mensal desde 2015.")
@@ -1612,7 +1615,9 @@ def pg_lugar(B, tipo: str, it: dict) -> str:
         cz_e = B.cruz("produto_pais", "export", filtro_nome=nome)
         cz_i = B.cruz("produto_pais", "import", filtro_nome=nome)
         h_e, h_i = f"O que o Brasil vende {esc(para)}", f"O que o Brasil compra {esc(de_p)}"
-        t = f"Comércio Brasil–{nome}: exportações e importações | Comex em Números"
+        t = f"Quanto o Brasil exporta {para} em {B.ref[:4]} e o que compra"
+        if len(t) > 72:
+            t = f"Comércio Brasil–{nome} em {B.ref[:4]}: exportações e importações"
         desc = desc_corta(f"Em {mes_curto(B.ref)}, o Brasil "
                           + (junta(f"exportou {us(E)} {para}{var_par(E, E0)}" if E else "", f"importou {us(I)}{var_par(I, I0)}" if I else "")
                              or f"não teve comércio {com_artigo(nome, 'com', art_pais(nome))}")
@@ -1647,7 +1652,7 @@ def pg_lugar(B, tipo: str, it: dict) -> str:
         cz_e = B.cruz("produto_estado", "export", filtro_nome=nome)
         cz_i = B.cruz("produto_estado", "import", filtro_nome=nome)
         h_e, h_i = f"O que {esc(o_nome)} exporta", f"O que {esc(o_nome)} importa"
-        t = f"O que {o_nome} exporta e importa | Comex em Números"
+        t = f"O que {o_nome} exporta e importa em {B.ref[:4]}: principais produtos"
         desc = desc_corta(f"{nome} em {mes_curto(B.ref)}: "
                           + (junta(f"exportações de {us(E)}{var_par(E, E0)}" if E else "", f"importações de {us(I)}{var_par(I, I0)}" if I else "")
                              or "sem comércio exterior") + ". Principais produtos e série desde 2015.")
@@ -1764,9 +1769,9 @@ def pg_municipio(B, r) -> str:
 {serie_html}
 {mais}
 {viz}"""
-    t = f"Exportações e importações {dc} | Comex em Números"
-    if len(t) > 75:
-        t = f"Comércio exterior {dc}"
+    t = f"O que {r['rotulo']} exporta e importa em {B.ref[:4]}"
+    if len(t) > 72:
+        t = f"Exportações {dc} em {B.ref[:4]}"
     desc = desc_corta(f"{r['rotulo']} em {mes_curto(B.ref)}: "
                       + (junta(f"exportações de {us(E)}{var_par(E, E0)}" if E else "", f"importações de {us(I)}{var_par(I, I0)}" if I else "")
                          or "sem comércio exterior") + ". Produtos, países e série desde 2015.")
@@ -1987,9 +1992,9 @@ def pg_par(B, cod: str, pais: str) -> str:
         h1 = f"Exportação de {nome_d} {para}"
     else:
         h1 = f"Importação de {nome_d} {de_p}"
-    t = f"{cap(h1)} | Comex em Números"
+    t = f"{cap(h1)} em {B.ref[:4]}: quanto e a que preço"
     if len(t) > 75:
-        t = cap(h1)
+        t = f"{cap(h1)} em {B.ref[:4]}"
     if " (SH4" in nome:  # dois SH4 com o mesmo nome curto
         t = f"{cap(h1)} (SH4 {cod})"
     if len(t) > 75:  # nome longo: encurta o produto e mantém o país
