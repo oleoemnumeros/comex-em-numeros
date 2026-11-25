@@ -1145,8 +1145,42 @@ def continue_html(B, caminho: str, extra=None) -> str:
             f'<ul class="cont-grid">{"".join(cartoes)}</ul></section>')
 
 
+def com_atalhos(corpo: str, caminho: str, prefixos, atalhos) -> str:
+    """Páginas longas ganham, logo depois do topo, uma fila de atalhos para as seções ("Nesta página")."""
+    if not caminho.startswith(tuple(prefixos)) or caminho.count("/") < 3:
+        return corpo
+    itens, usados, n = [], set(), [0]
+
+    def troca(m):
+        txt = re.sub(r"<[^>]+>", "", m.group(2))
+        for chave, rot in atalhos:
+            if txt.lower().startswith(chave.lower()) and rot not in usados:
+                usados.add(rot)
+                n[0] += 1
+                ide = f"s{n[0]}"
+                itens.append(f'<a href="#{ide}">{rot}</a>')
+                return f'<h2{m.group(1)} id="{ide}">{m.group(2)}</h2>'
+        return m.group(0)
+    novo = re.sub(r'<h2((?:(?!id=)[^>])*)>(.*?)</h2>', troca, corpo)
+    if len(itens) < 4:
+        return corpo
+    fila = f'<nav class="atalhos" aria-label="Nesta página"><span>Nesta página</span>{"".join(itens)}</nav>'
+    i = novo.find("</section>")
+    if i < 0:
+        i = novo.find("</div>")
+    return novo[:i + len("</section>" if novo[i:i + 10] == "</section>" else "</div>")] + "\n" + fila + novo[i + len("</section>" if novo[i:i + 10] == "</section>" else "</div>"):] if i >= 0 else novo
+
+
+ATALHOS = [("Últimos 13 meses", "13 meses"), ("Preço médio", "Preço"), ("Para onde", "Destinos"), ("O que o Brasil vende", "O que vende"),
+           ("O que o Brasil compra", "O que compra"), ("O que exporta", "Exporta"), ("O que importa", "Importa"), ("De onde", "Origens"),
+           ("Por onde sai", "Portos"), ("Estados que mais exportam", "Estados"), ("Mês a mês", "Mês a mês"), ("Ano a ano", "Ano a ano"),
+           ("Outros municípios", "Vizinhos")]
+PREF_ATALHOS = ("/produto/", "/municipio/", "/pais/", "/estado/", "/porto/")
+
+
 def pagina(B, caminho, titulo, descricao, corpo, ativo="", jsonld=None, migalhas=None, imagem=None, continuar=None) -> str:
     url = BASE + caminho
+    corpo = com_atalhos(corpo, caminho, PREF_ATALHOS, ATALHOS)
     # o Google corta títulos acima de ~60 caracteres: tira a marca da <title> quando passa disso
     titulo_tag = titulo[:-len(" | Comex em Números")] if len(titulo) > 62 and titulo.endswith(" | Comex em Números") else titulo
     nav = "".join(f'<a href="{h}"' + (' aria-current="page"' if h == ativo else "") + f">{t}</a>" for h, t in NAV)
