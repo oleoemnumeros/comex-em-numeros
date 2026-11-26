@@ -2668,6 +2668,14 @@ def main() -> None:
                 escreve(r["url"], pg_municipio(B, r), urls)
     for velho, novo in RENOMEADOS.items():
         escreve(velho, redirect(novo))
+    # endereços de produto da primeira versão do site (antes de os links serem fixados): redirecionam para o atual
+    arq_ant = RAIZ / "site" / "urls_antigas.txt"
+    if arq_ant.exists():
+        for velho in arq_ant.read_text(encoding="utf-8").split():
+            cod = velho.strip("/").split("/")[-1][:4]
+            novo = B.url_prod(cod) if cod in B.prod else ""
+            if novo and novo != velho and not (SAIDA / velho.strip("/") / "index.html").exists():
+                escreve(velho, redirect(novo))
     for (cod, pais) in B.par_url:
         escreve(B.par_url[(cod, pais)], pg_par(B, cod, pais), urls)
     for it in B.uf.values():
