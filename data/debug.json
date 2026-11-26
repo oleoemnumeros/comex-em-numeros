@@ -1,14 +1,4 @@
 {
  "consultas": [],
- "dates_updated": {
-  "data": {
-   "updated": "2026-11-06",
-   "year": "2026",
-   "monthNumber": "10"
-  },
-  "success": true,
-  "message": null,
-  "processo_info": null,
-  "language": "pt"
- }
+ "erro_fatal": "POST /general falhou após 6 tentativas: HTTP 503: <html>\r\n<head><title>503 Service Temporarily Unavailable</title></head>\r\n<body>\r\n<center><h1>503 Service Temporarily Unavailable</h1></center>\r\n<hr><center>nginx</center>\r\n<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElemen"
 }
