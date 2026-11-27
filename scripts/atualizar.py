@@ -451,11 +451,21 @@ def cod_ncm(l: dict) -> tuple[str, str]:
     return (cod.zfill(8) if cod else ""), nome.replace("\xa0", " ").strip()
 
 
-def janelas_12m(ano_ref: int, mes_ref: int) -> list[tuple[str, str]]:
-    """Os últimos 12 meses em faixas dentro de um mesmo ano (a API lê de/até como faixa de anos E de meses)."""
+def janelas_12m(ano_ref: int, mes_ref: int, tamanho: int = 12) -> list[tuple[str, str]]:
+    """Os últimos 12 meses em faixas dentro de um mesmo ano (a API lê de/até como faixa de anos E de meses),
+    com no máximo `tamanho` meses cada: consultas grandes demais (NCM x país) estouram o tempo do servidor."""
     if mes_ref == 12:
-        return [(f"{ano_ref}-01", f"{ano_ref}-12")]
-    return [(f"{ano_ref - 1}-{mes_ref + 1:02d}", f"{ano_ref - 1}-12"), (f"{ano_ref}-01", f"{ano_ref}-{mes_ref:02d}")]
+        anos = [(ano_ref, 1, 12)]
+    else:
+        anos = [(ano_ref - 1, mes_ref + 1, 12), (ano_ref, 1, mes_ref)]
+    out = []
+    for a, m0, m1 in anos:
+        m = m0
+        while m <= m1:
+            fim = min(m + tamanho - 1, m1)
+            out.append((f"{a}-{m:02d}", f"{a}-{fim:02d}"))
+            m = fim + 1
+    return out
 
 
 def ncm_dados(ano_ref: int, mes_ref: int) -> None:
@@ -502,7 +512,7 @@ def ncm_dados(ano_ref: int, mes_ref: int) -> None:
                 continue
             soma: dict[tuple, list] = {}
             try:
-                for de, ate in janelas_12m(ano_ref, mes_ref):
+                for de, ate in janelas_12m(ano_ref, mes_ref, 3 if tipo == "pais12" else 12):
                     for l in consulta(fluxo, de, ate, ["ncm", detalhe], False, f"ncm_{tipo}"):
                         cod, _ = cod_ncm(l)
                         lugar = str(l.get(detalhe) or "").replace("\xa0", " ").strip()
