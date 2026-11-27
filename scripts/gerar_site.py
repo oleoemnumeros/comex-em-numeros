@@ -513,11 +513,12 @@ class Base:
                 reg.setdefault(fl, [0] * n)
                 reg.setdefault(fl[0] + "k", [0] * n)
             reg["t12"] = sum(reg["export"][-12:]) + sum(reg["import"][-12:])
+            reg["ativos"] = sum(1 for e, i in zip(reg["export"][-12:], reg["import"][-12:]) if e or i)
             reg["nome"] = nome_ncm(reg["nome"], self.prod.get(reg["cod"][:4]))
             reg["url"] = ""
-        for reg in sorted(self.ncm.values(), key=lambda r: -r["t12"])[:NCM_MAX]:
-            if reg["t12"] >= NCM_MIN:
-                reg["url"] = f"/ncm/{reg['cod']}/"
+        regulares = [r for r in self.ncm.values() if r["t12"] >= NCM_MIN and r["ativos"] >= NCM_MESES_ATIVOS]
+        for reg in sorted(regulares, key=lambda r: -r["t12"])[:NCM_MAX]:
+            reg["url"] = f"/ncm/{reg['cod']}/"
 
     def ncm_com_pagina(self, sh4: str | None = None) -> list[dict]:
         regs = [r for r in self.ncm.values() if r["url"] and (sh4 is None or r["cod"][:4] == sh4)]
@@ -1696,6 +1697,8 @@ def pg_produto(B, p: dict) -> str:
 NCM_ANOS = 5           # anos de série nas páginas de NCM
 NCM_MIN = 5e6          # página só para NCM com pelo menos US$ 5 mi em 12 meses (exportação + importação)
 NCM_MAX = 2000         # e no máximo as 2.000 maiores, para não encher o site de páginas fracas
+NCM_MESES_ATIVOS = 9   # e com comércio em pelo menos 9 dos últimos 12 meses: NCM de embarque esporádico
+                       # (navio, turbina, plataforma) deixa o gráfico cheio de buracos e a página fraca
 
 
 def fmt_ncm(cod: str) -> str:
@@ -1878,7 +1881,7 @@ def pg_ncm_indice(B) -> str:
 <p class="lede">Importação, exportação, preço médio por kg, países e estados de {nf(len(regs), 0)} NCMs (8 dígitos), as de maior movimento nos últimos 12 meses ({per}). Busque pelo código, com ou sem pontos, ou pela descrição.</p>
 <div class="search"><label for="busca" class="small" style="align-self:center">Buscar</label><input id="busca" type="search" placeholder="Ex.: 0901.11.10, celular, fertilizante" autocomplete="off" data-indice="/assets/busca-ncm.json" data-rotulo="NCM"></div><div id="busca-res" aria-live="polite"></div></div>
 <div class="card"><div class="scroll"><table><thead><tr><th>NCM</th><th class="r">Exportação</th><th class="r">Importação</th></tr></thead><tbody>{"".join(linhas)}</tbody></table></div>
-<p class="src">Valores em US$ FOB nos últimos 12 meses. Só ganham página as NCMs com pelo menos {us(NCM_MIN)} em 12 meses, somando exportação e importação.</p></div>"""
+<p class="src">Valores em US$ FOB nos últimos 12 meses. Só ganham página as NCMs com pelo menos {us(NCM_MIN)} em 12 meses, somando exportação e importação, e com comércio em pelo menos {NCM_MESES_ATIVOS} desses meses.</p></div>"""
     desc = desc_corta(f"Importação e exportação por NCM: valores, preço médio por kg, países de origem e destino de {nf(len(regs), 0)} NCMs, "
                       f"com dados do Comex Stat até {mes_curto(B.ref)}.")
     cont = [(ESTE, "/produtos/", "Todos os produtos (SH4)", "A pauta completa, agrupada em posições de 4 dígitos"), SETOR_EXTERNO, CAMBIO]
