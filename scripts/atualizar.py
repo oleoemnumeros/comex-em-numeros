@@ -436,6 +436,95 @@ def municipios(ano_ref: int, mes_ref: int) -> None:
             log(f"  município {fluxo}/{tipo}_{per}: {len(dados)} registros")
 
 
+PASTA_NCM = RAIZ / "data" / "ncm"
+ANOS_NCM = 5  # série por NCM: o ano atual e os 4 anteriores
+
+
+def cod_ncm(l: dict) -> tuple[str, str]:
+    """(código NCM com 8 dígitos, descrição). A API pode devolver o código como número, sem o zero da frente."""
+    nome, cod = rotulo_e_codigo(l, "ncm")
+    if not nome:  # descrição em outro campo (ex.: noNcmPor)
+        nome = next((str(v) for k, v in l.items() if "ncm" in k.lower() and isinstance(v, str) and not v.strip().isdigit()), "")
+    cod = re.sub(r"\D", "", str(cod))
+    if len(cod) > 8:  # o código veio grudado na descrição sem separador
+        cod = ""
+    return (cod.zfill(8) if cod else ""), nome.replace("\xa0", " ").strip()
+
+
+def janelas_12m(ano_ref: int, mes_ref: int) -> list[tuple[str, str]]:
+    """Os últimos 12 meses em faixas dentro de um mesmo ano (a API lê de/até como faixa de anos E de meses)."""
+    if mes_ref == 12:
+        return [(f"{ano_ref}-01", f"{ano_ref}-12")]
+    return [(f"{ano_ref - 1}-{mes_ref + 1:02d}", f"{ano_ref - 1}-12"), (f"{ano_ref}-01", f"{ano_ref}-{mes_ref:02d}")]
+
+
+def ncm_dados(ano_ref: int, mes_ref: int) -> None:
+    """Dados por NCM (8 dígitos), para as páginas /ncm/.
+
+    data/ncm/{fluxo}_serie_{ano}.json.gz  itens: {ncm: [descrição, [US$ x 12], [kg x 12]]}
+    data/ncm/{fluxo}_pais12.json.gz       linhas: [ncm, país, US$, kg] dos últimos 12 meses
+    data/ncm/{fluxo}_uf12.json.gz         linhas: [ncm, estado, US$] dos últimos 12 meses
+    Anos fechados são baixados uma vez só; o ano atual, o anterior e os 12 meses, a cada mês novo.
+    """
+    ref = f"{ano_ref}-{mes_ref:02d}"
+    PASTA_NCM.mkdir(parents=True, exist_ok=True)
+    for fluxo in ("export", "import"):
+        for ano in range(ano_ref - ANOS_NCM + 1, ano_ref + 1):
+            arq = PASTA_NCM / f"{fluxo}_serie_{ano}.json.gz"
+            fim = ref if ano == ano_ref else f"{ano}-12"
+            if arq.exists():
+                atual = _le_gz(arq)
+                if atual.get("itens") and (ano < ano_ref - 1 or atual.get("ref") == ref) and atual.get("ate") == fim:
+                    continue
+            try:
+                ls = consulta(fluxo, f"{ano}-01", fim, ["ncm"], True, "ncm_serie")
+            except Exception as e:  # noqa: BLE001
+                log(f"  ERRO NCM série {fluxo}/{ano}: {e}")
+                debug.setdefault("erros", []).append(f"ncm serie {fluxo}/{ano}: {e}")
+                continue
+            itens: dict[str, list] = {}
+            for l in ls:
+                am = mes_da_linha(l)
+                cod, nome = cod_ncm(l)
+                if not am or am[0] != ano or not cod:
+                    continue
+                it = itens.setdefault(cod, [nome, [0] * 12, [0] * 12])
+                it[1][am[1] - 1] += round(num(l.get("metricFOB")))
+                it[2][am[1] - 1] += round(num(l.get("metricKG")))
+            if not itens:
+                log(f"  NCM série {fluxo}/{ano}: vazio, não gravei. Exemplo: {ls[:1]}")
+                continue
+            _grava_gz(arq, {"fluxo": fluxo, "ano": ano, "ate": fim, "ref": ref, "itens": itens})
+            log(f"  NCM série {fluxo}/{ano}: {len(itens)} NCMs")
+        for tipo, detalhe in (("pais12", "country"), ("uf12", "state")):
+            arq = PASTA_NCM / f"{fluxo}_{tipo}.json.gz"
+            if arq.exists() and _le_gz(arq).get("ref") == ref:
+                continue
+            soma: dict[tuple, list] = {}
+            try:
+                for de, ate in janelas_12m(ano_ref, mes_ref):
+                    for l in consulta(fluxo, de, ate, ["ncm", detalhe], False, f"ncm_{tipo}"):
+                        cod, _ = cod_ncm(l)
+                        lugar = str(l.get(detalhe) or "").replace("\xa0", " ").strip()
+                        if not cod or not lugar:
+                            continue
+                        v = soma.setdefault((cod, lugar), [0.0, 0.0])
+                        v[0] += num(l.get("metricFOB"))
+                        v[1] += num(l.get("metricKG"))
+            except Exception as e:  # noqa: BLE001
+                log(f"  ERRO NCM {tipo} {fluxo}: {e}")
+                debug.setdefault("erros", []).append(f"ncm {tipo} {fluxo}: {e}")
+                continue
+            linhas_ = sorted(([c, p, round(f), round(k)] for (c, p), (f, k) in soma.items() if f >= 1000), key=lambda x: -x[2])
+            if tipo == "uf12":
+                linhas_ = [x[:3] for x in linhas_]
+            if not linhas_:
+                log(f"  NCM {tipo} {fluxo}: vazio, não gravei")
+                continue
+            _grava_gz(arq, {"fluxo": fluxo, "ref": ref, "janelas": janelas_12m(ano_ref, mes_ref), "linhas": linhas_})
+            log(f"  NCM {tipo} {fluxo}: {len(linhas_)} linhas")
+
+
 def main() -> int:
     forcar = os.environ.get("FORCAR") == "1"
     ano, mes = ultimo_mes()
@@ -447,6 +536,11 @@ def main() -> int:
     series_historicas(ano, mes)
     produto_pais_historico(ano, mes)
     municipios(ano, mes)
+    try:
+        ncm_dados(ano, mes)
+    except Exception as e:  # noqa: BLE001  (as páginas de NCM são extras: um erro aqui não para o resto)
+        log(f"  ERRO nos dados de NCM: {e}")
+        debug.setdefault("erros", []).append(f"ncm: {e}")
     ARQ_DEBUG.parent.mkdir(parents=True, exist_ok=True)
     ARQ_DEBUG.write_text(json.dumps(debug, ensure_ascii=False, indent=1), encoding="utf-8")
 
