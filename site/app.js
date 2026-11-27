@@ -22,17 +22,23 @@
   var busca=document.getElementById("busca");
   if(busca){
     var idx=null, out=document.getElementById("busca-res");
+    // data-indice/data-rotulo: a página /ncm/ usa o mesmo campo com o índice de NCMs ([código, descrição, código com pontos, endereço])
+    var fonte=busca.getAttribute("data-indice")||"/assets/busca.json", rotulo=busca.getAttribute("data-rotulo")||"SH4";
     function norm(s){return String(s).normalize("NFD").replace(/[̀-ͯ]/g,"").toLowerCase();}
     function esc(s){return String(s).replace(/[&<>"]/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c];});}
     function roda(){
       var q=norm(busca.value).trim();
       if(q.length<2){out.innerHTML="";return;}
-      var r=idx.filter(function(p){return norm(p[1]+" "+p[2]).indexOf(q)>=0||p[0].indexOf(q)===0;}).slice(0,15);
-      out.innerHTML=r.length?"<ul class=\"plain\">"+r.map(function(p){return "<li><a href=\""+p[3]+"\">"+esc(p[1])+"</a> <span class=\"small\">SH4 "+p[0]+"</span></li>";}).join("")+"</ul>":"<p class=\"small\">Nenhum produto encontrado.</p>";
+      var qc=q.replace(/[.\s-]/g,"");
+      var r=idx.filter(function(p){return norm(p[1]+" "+p[2]).indexOf(q)>=0||(qc.length>=2&&p[0].indexOf(qc)===0);}).slice(0,15);
+      out.innerHTML=r.length?"<ul class=\"plain\">"+r.map(function(p){
+        return rotulo==="NCM"?"<li><a href=\""+p[3]+"\">NCM "+esc(p[2])+"</a> <span class=\"small\">"+esc(p[1])+"</span></li>"
+                             :"<li><a href=\""+p[3]+"\">"+esc(p[1])+"</a> <span class=\"small\">SH4 "+p[0]+"</span></li>";
+      }).join("")+"</ul>":"<p class=\"small\">"+(rotulo==="NCM"?"Nenhuma NCM encontrada.":"Nenhum produto encontrado.")+"</p>";
     }
     busca.addEventListener("input",function(){
       if(idx){roda();return;}
-      fetch("/assets/busca.json").then(function(r){return r.json();}).then(function(j){idx=j;roda();}).catch(function(){out.innerHTML="<p class=\"small\">A busca não carregou. Tente recarregar a página.</p>";});
+      fetch(fonte).then(function(r){return r.json();}).then(function(j){idx=j;roda();}).catch(function(){out.innerHTML="<p class=\"small\">A busca não carregou. Tente recarregar a página.</p>";});
     });
   }
   // Copiar texto do resumo

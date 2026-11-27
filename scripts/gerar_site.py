@@ -432,6 +432,7 @@ class Base:
         if self.tem_serie:
             self.porto = {k: v for k, v in self.porto.items() if mov12(v["nome"]) >= 1e7}
         self._carrega_pares()
+        self._carrega_ncm()
         cz = d.get("cruzado") or {}
         self.cz = {}
         for chave in ("produto_pais", "produto_estado", "produto_porto"):
@@ -466,6 +467,61 @@ class Base:
             tot = max(sum(reg.get(fl, {}).get("mes", {}).get(m, (0, 0))[0] for m in ult12) for fl in ("export", "import"))
             if tot >= 1e7:
                 self.par_url[(cod, pais)] = f'{self.prod[cod]["url"]}{slug(pais)}/'
+
+    def _carrega_ncm(self):
+        """data/ncm (scripts/atualizar.py): série mensal por NCM dos últimos anos e os últimos 12 meses por país e estado.
+
+        Ganha página a NCM com pelo menos NCM_MIN em 12 meses (exportação + importação), até NCM_MAX páginas,
+        das maiores para as menores. O endereço usa só o código (/ncm/09011110/), que não muda."""
+        self.ncm, self.ncm_meses, self.ncm_lug = {}, [], {}
+        pasta = RAIZ / "data" / "ncm"
+        if not pasta.exists():
+            return
+
+        def le(arq):
+            try:
+                return json.loads(gzip.decompress(arq.read_bytes()))
+            except Exception:  # noqa: BLE001
+                return {}
+        anos = sorted({int(a.name.split("_serie_")[1][:4]) for a in pasta.glob("*_serie_*.json.gz")})
+        anos = [a for a in anos if a <= int(self.ref[:4])][-NCM_ANOS:]
+        if not anos:
+            return
+        self.ncm_meses = [m for m in self.meses if int(m[:4]) >= anos[0]]
+        idx = {m: k for k, m in enumerate(self.ncm_meses)}
+        n = len(self.ncm_meses)
+        for fl in ("export", "import"):
+            for a in anos:
+                for cod, (nome, v, k) in (le(pasta / f"{fl}_serie_{a}.json.gz").get("itens") or {}).items():
+                    reg = self.ncm.setdefault(cod, {"cod": cod, "nome": nome})
+                    if nome:
+                        reg["nome"] = nome  # fica a descrição mais recente
+                    sv = reg.setdefault(fl, [0] * n)
+                    sk = reg.setdefault(fl[0] + "k", [0] * n)
+                    for j in range(12):
+                        p = idx.get(f"{a}-{j + 1:02d}")
+                        if p is not None:
+                            sv[p], sk[p] = v[j], k[j]
+            for tipo in ("pais12", "uf12"):
+                ob = le(pasta / f"{fl}_{tipo}.json.gz")
+                if ob.get("ref") != self.ref:
+                    continue  # 12 meses de outro mês de corte: melhor não mostrar
+                for linha in ob.get("linhas", []):
+                    self.ncm_lug.setdefault((tipo, fl, linha[0]), []).append(linha[1:])
+        for reg in self.ncm.values():
+            for fl in ("export", "import"):
+                reg.setdefault(fl, [0] * n)
+                reg.setdefault(fl[0] + "k", [0] * n)
+            reg["t12"] = sum(reg["export"][-12:]) + sum(reg["import"][-12:])
+            reg["nome"] = nome_ncm(reg["nome"], self.prod.get(reg["cod"][:4]))
+            reg["url"] = ""
+        for reg in sorted(self.ncm.values(), key=lambda r: -r["t12"])[:NCM_MAX]:
+            if reg["t12"] >= NCM_MIN:
+                reg["url"] = f"/ncm/{reg['cod']}/"
+
+    def ncm_com_pagina(self, sh4: str | None = None) -> list[dict]:
+        regs = [r for r in self.ncm.values() if r["url"] and (sh4 is None or r["cod"][:4] == sh4)]
+        return sorted(regs, key=lambda r: r["cod"])
 
     def _carrega_municipios(self):
         """data/municipios: ranking, produtos e países do mês (e de um ano antes) e série mensal desde 2015."""
@@ -993,7 +1049,7 @@ def link_csv(nome_arq: str) -> str:
     return f' <a class="csv" href="dados.csv" download="{esc(nome_arq)}">Baixar dados (CSV)</a>'
 
 
-def bloco_preco(B, nome, ev, ek, iv, ik) -> str:
+def bloco_preco(B, nome, ev, ek, iv, ik, forca_kg=False) -> str:
     """Preço médio mensal (exportação e importação) e quebra valor = volume x preço no acumulado do ano."""
     def serie_preco(v, k):
         return [(a / b * 1000) if (b and b >= 1000 and a) else 0 for a, b in zip(v, k)]
@@ -1004,7 +1060,7 @@ def bloco_preco(B, nome, ev, ek, iv, ik) -> str:
     if not (usa_e or usa_i):
         return ""
     ref_vals = [x for x in (pe if usa_e else pi) if x]
-    por_kg = (sorted(ref_vals)[len(ref_vals) // 2]) >= 100_000
+    por_kg = forca_kg or (sorted(ref_vals)[len(ref_vals) // 2]) >= 100_000
     div = 1000 if por_kg else 1
     unid = "US$/kg" if por_kg else "US$/t"
     series = []
@@ -1067,7 +1123,7 @@ LEGENDA = ('<div class="legend"><span><i style="background:var(--exp)"></i>Expor
 
 # Ordem padrão da Família em Números: Início, Resumos, temas do portal, lugares, ferramentas e downloads, Como funciona
 NAV = [("/", "Início"), ("/resumo/", "Resumos"), ("/exportacao/", "Exportação"), ("/importacao/", "Importação"),
-       ("/produtos/", "Produtos"), ("/paises/", "Países"), ("/estados/", "Estados"), ("/municipios/", "Municípios"), ("/portos/", "Portos"),
+       ("/produtos/", "Produtos"), ("/ncm/", "NCM"), ("/paises/", "Países"), ("/estados/", "Estados"), ("/municipios/", "Municípios"), ("/portos/", "Portos"),
        ("/planilhas/", "Planilhas"), ("/sobre/", "Como funciona")]
 
 
@@ -1176,7 +1232,7 @@ ATALHOS = [("Últimos 13 meses", "13 meses"), ("Preço médio", "Preço"), ("Par
            ("O que o Brasil compra", "O que compra"), ("O que exporta", "Exporta"), ("O que importa", "Importa"), ("De onde", "Origens"),
            ("Por onde sai", "Portos"), ("Estados que mais exportam", "Estados"), ("Mês a mês", "Mês a mês"), ("Ano a ano", "Ano a ano"),
            ("Outros municípios", "Vizinhos")]
-PREF_ATALHOS = ("/produto/", "/municipio/", "/pais/", "/estado/", "/porto/")
+PREF_ATALHOS = ("/produto/", "/ncm/", "/municipio/", "/pais/", "/estado/", "/porto/")
 
 
 def pagina(B, caminho, titulo, descricao, corpo, ativo="", jsonld=None, migalhas=None, imagem=None, continuar=None) -> str:
@@ -1477,6 +1533,8 @@ def busca_geral(B) -> str:
     for it in sorted(B.porto.values(), key=peso) if B.porto else []:
         if it.get("url"):
             itens.append([it["nome"], it["url"], "porto"])
+    for r in sorted((r for r in B.ncm.values() if r["url"]), key=lambda r: -r["t12"]):
+        itens.append([f'NCM {fmt_ncm(r["cod"])}', r["url"], "NCM", f'{r["cod"]} {r["nome"]}'[:140]])
     return json.dumps(itens, ensure_ascii=False, separators=(",", ":"))
 
 
@@ -1608,6 +1666,7 @@ def pg_produto(B, p: dict) -> str:
 {bloco_13(B, sev, siv, E0, E, I0, I, vol)}
 {preco_html}
 {"".join(secoes)}
+{bloco_ncms_sh4(B, cod)}
 {serie_html}"""
     nome_d = minusc(nome.split(" (SH4")[0])
     # título no formato da busca ("exportação de soja 2026", "quanto o Brasil exporta de café")
@@ -1631,6 +1690,222 @@ def pg_produto(B, p: dict) -> str:
           "isAccessibleForFree": True, "license": LICENCA, "creator": {"@type": "Organization", "name": "Comex em Números", "url": BASE + "/"},
           "isBasedOn": "https://comexstat.mdic.gov.br/"}
     return pagina(B, p["url"], t, desc, c, "/produtos/", ld, migalhas=[("/produtos/", "Produtos"), (None, corta(nome, 40))])
+
+
+# ---------------------------------------------------------------- NCM (8 dígitos)
+NCM_ANOS = 5           # anos de série nas páginas de NCM
+NCM_MIN = 5e6          # página só para NCM com pelo menos US$ 5 mi em 12 meses (exportação + importação)
+NCM_MAX = 2000         # e no máximo as 2.000 maiores, para não encher o site de páginas fracas
+
+
+def fmt_ncm(cod: str) -> str:
+    return f"{cod[:4]}.{cod[4:6]}.{cod[6:8]}"
+
+
+def nome_ncm(nome: str, prod: dict | None) -> str:
+    """Descrição da NCM; as genéricas ("Outros", "Outras") ganham o nome do produto (SH4) entre parênteses."""
+    n = re.sub(r"\s+", " ", (nome or "").replace("\xa0", " ")).strip(" -–")
+    n = n[:1].upper() + n[1:] if n else n
+    if prod and (len(n) < 4 or re.fullmatch(r"(outr[oa]s?|outros\(as\))( .{0,12})?", n, flags=re.I)):
+        n = f"{n or 'Outros'} ({minusc(prod['curto'].split(' (SH4')[0])})"
+    return n or "Sem descrição"
+
+
+class VistaNcm:
+    """Recorte do tempo das páginas de NCM: os gráficos e tabelas do site usam B.meses, B.ref e B.ant."""
+    def __init__(self, B):
+        self.meses, self.ref, self.ant, self.csv, self.d = B.ncm_meses, B.ref, B.ant, B.csv, B.d
+
+
+def _lugares_ncm(B, tipo, fl, cod):
+    return sorted(B.ncm_lug.get((tipo, fl, cod), []), key=lambda x: -x[1])
+
+
+def tabela_ncm_lugar(B, linhas, tipo, total, n=15) -> str:
+    """Países (com preço médio) ou estados de uma NCM nos últimos 12 meses."""
+    if not linhas:
+        return '<p class="small">Sem dados para este recorte.</p>'
+    cab = "País" if tipo == "pais12" else "Estado"
+    pr = tipo == "pais12"
+    h = [f'<div class="scroll"><table><thead><tr><th></th><th>{cab}</th><th class="r">12 meses</th>'
+         + ('<th class="r">US$/kg</th>' if pr else "") + "</tr></thead><tbody>"]
+    for i, ln in enumerate(linhas[:n], 1):
+        nome, fob = ln[0], ln[1]
+        url = B.url_nome("pais" if pr else "estado", nome)
+        link = f'<a href="{url}">{esc(corta(nome, 40))}</a>' if url else esc(corta(nome, 40))
+        sub = f'<span class="s">{nf(fob / total * 100, 1)}% do total</span>' if total else ""
+        preco = ""
+        if pr:
+            kg = ln[2] if len(ln) > 2 else 0
+            preco = f'<td class="r">{nf(fob / kg, 2) if kg >= 1000 else "—"}</td>'
+        h.append(f'<tr><td class="n">{i}</td><td>{link}{sub}</td><td class="r">{us(fob)}</td>{preco}</tr>')
+    h.append("</tbody></table></div>")
+    return "".join(h)
+
+
+def tabela_anual_ncm(V, ev, iv, ek, ik) -> str:
+    ar, mr = int(V.ref[:4]), int(V.ref[5:])
+    anos = sorted({int(m[:4]) for m in V.meses}, reverse=True)
+    def soma(vals, ano, ate=12):
+        return sum(v for m, v in zip(V.meses, vals) if int(m[:4]) == ano and int(m[5:]) <= ate)
+    linhas = []
+    for ano in anos:
+        ate = mr if ano == ar else 12
+        e, i, k_e, k_i = soma(ev, ano, ate), soma(iv, ano, ate), soma(ek, ano, ate), soma(ik, ano, ate)
+        e0, i0 = (soma(ev, ano - 1, ate), soma(iv, ano - 1, ate)) if ano - 1 in anos else (0, 0)
+        ce = chip(e, e0) if e0 else ""
+        ci = chip(i, i0) if i0 else ""
+        pe = nf(e / k_e, 2) if k_e >= 1000 else "—"
+        pi = nf(i / k_i, 2) if k_i >= 1000 else "—"
+        rot = f"{ano}*" if ano == ar and mr < 12 else str(ano)
+        linhas.append(f'<tr><td>{rot}</td><td class="r">{us_sem(e)}<span class="s">{ce}</span></td><td class="r">{pe}</td>'
+                      f'<td class="r">{us_sem(i)}<span class="s">{ci}</span></td><td class="r">{pi}</td></tr>')
+    nota = (f'<p class="src">Valores em US$ FOB e preço médio em US$/kg. * {ar}: janeiro a {MESES[mr - 1]}, comparado com o mesmo período de {ar - 1}.</p>'
+            if mr < 12 else '<p class="src">Valores em US$ FOB e preço médio em US$/kg.</p>')
+    return ('<div class="scroll"><table><thead><tr><th>Ano</th><th class="r">Exportação</th><th class="r">US$/kg</th>'
+            f'<th class="r">Importação</th><th class="r">US$/kg</th></tr></thead><tbody>{"".join(linhas)}</tbody></table></div>{nota}')
+
+
+def pg_ncm(B, n: dict) -> str:
+    V = VistaNcm(B)
+    cod, nome, url = n["cod"], n["nome"], n["url"]
+    fmt = fmt_ncm(cod)
+    ev, iv, ek, ik = n["export"], n["import"], n["ek"], n["ik"]
+    E, I = sum(ev[-12:]), sum(iv[-12:])
+    E0, I0 = sum(ev[-24:-12]), sum(iv[-24:-12])
+    KE, KI = sum(ek[-12:]), sum(ik[-12:])
+    KE0, KI0 = sum(ek[-24:-12]), sum(ik[-24:-12])
+    per = f"{mes_curto(V.meses[-12])} a {mes_curto(V.ref)}"
+    prod = B.prod.get(cod[:4])
+    frases = []
+    if E:
+        frases.append(f'Nos últimos 12 meses ({per}), o Brasil exportou <strong class="num">{us(E)}</strong> da NCM {fmt}'
+                      + (f", {var_txt(E, E0)} sobre os 12 meses anteriores" if E0 else "") + ".")
+    if I:
+        frases.append((f'As importações somaram <strong class="num">{us(I)}</strong>' if E else
+                       f'Nos últimos 12 meses ({per}), o Brasil importou <strong class="num">{us(I)}</strong> da NCM {fmt}')
+                      + (f", {var_txt(I, I0)}" if I0 else "") + ".")
+    if I and KI >= 1000:
+        frases.append(f"O preço médio de importação foi de US$ {nf(I / KI, 2)} por kg.")
+    elif E and KE >= 1000:
+        frases.append(f"O preço médio de exportação foi de US$ {nf(E / KE, 2)} por kg.")
+
+    def preco_tile(lbl, v, kg, v0, kg0, cls):
+        if kg < 1000:
+            return tile(cls, lbl, "—", "", '<span class="chg flat">—</span>')
+        p, p0 = v / kg, (v0 / kg0 if kg0 >= 1000 else 0)
+        return tile(cls, lbl, nf(p, 2), "US$/kg", chip(p, p0) if p0 else '<span class="chg flat">—</span>')
+    tiles = (tile("exp", "Exportação em 12 meses", us_sem(E), "US$", chip(E, E0)) + tile("imp", "Importação em 12 meses", us_sem(I), "US$", chip(I, I0))
+             + preco_tile("Preço médio exportado", E, KE, E0, KE0, "exp") + preco_tile("Preço médio importado", I, KI, I0, KI0, "imp"))
+
+    E_m, E0_m, I_m, I0_m = ev[-1], ev[-13] if len(ev) >= 13 else 0, iv[-1], iv[-13] if len(iv) >= 13 else 0
+    secoes = []
+    dest, orig = _lugares_ncm(B, "pais12", "export", cod), _lugares_ncm(B, "pais12", "import", cod)
+    ufe = [x for x in _lugares_ncm(B, "uf12", "export", cod) if not nao_declarado(x[0])]
+    ufi = [x for x in _lugares_ncm(B, "uf12", "import", cod) if not nao_declarado(x[0])]
+
+    def par(a, b):
+        cards = [x for x in (a, b) if x]
+        return "" if not cards else (f'<div class="cols">{"".join(cards)}</div>' if len(cards) == 2 else cards[0])
+    if I:
+        secoes.append(par(
+            f'<div class="card"><h2>De onde vem</h2><p class="small">Países de onde o Brasil importou a NCM {fmt} nos últimos 12 meses, com o preço médio de cada origem.</p>{tabela_ncm_lugar(B, orig, "pais12", I)}</div>' if orig else "",
+            f'<div class="card"><h2>Estados que mais importam</h2>{tabela_ncm_lugar(B, ufi, "uf12", I, 10)}</div>' if ufi else ""))
+    if E:
+        secoes.append(par(
+            f'<div class="card"><h2>Para onde vai</h2><p class="small">Países que mais compraram a NCM {fmt} do Brasil nos últimos 12 meses.</p>{tabela_ncm_lugar(B, dest, "pais12", E)}</div>' if dest else "",
+            f'<div class="card"><h2>Estados que mais exportam</h2>{tabela_ncm_lugar(B, ufe, "uf12", E, 10)}</div>' if ufe else ""))
+    if E > I:  # quem procura uma NCM quase sempre está importando: a origem só sai do topo quando a exportação pesa mais
+        secoes.reverse()
+
+    ano0 = V.meses[0][:4]
+    preco_html = bloco_preco(V, nome, ev, ek, iv, ik, forca_kg=True)
+    preco_html = (preco_html.replace(" Dentro de uma mesma posição SH4 há produtos diferentes, então mudanças de mix também mexem no preço médio.", "")
+                  .replace("desde 2015", f"desde {ano0}"))
+    V.csv[url] = csv_texto(V.meses, {"exportacao_us_fob": ev, "exportacao_kg": ek, "importacao_us_fob": iv, "importacao_kg": ik})
+    serie_html = (f'<div class="card chart"><div class="row-head"><h2>Mês a mês desde {ano0}</h2>{LEGENDA}</div>'
+                  f'<div>{svg_serie(V, ev, iv, f"Exportações e importações mensais da NCM {fmt} desde {ano0}")}</div>'
+                  f'<p class="src">Valores mensais em US$ FOB. Último ponto: {mes_nome(V.ref)}.{link_csv(f"comexemnumeros-ncm-{cod}.csv")}</p></div>'
+                  f'<div class="card"><h2>Ano a ano</h2>{tabela_anual_ncm(V, ev, iv, ek, ik)}</div>')
+    irmas = [r for r in B.ncm_com_pagina(cod[:4]) if r["cod"] != cod]
+    rel = ""
+    if prod or irmas:
+        itens = "".join(f'<li><a href="{r["url"]}">NCM {fmt_ncm(r["cod"])}</a> <span class="small">{esc(corta(r["nome"], 70))}</span></li>' for r in irmas[:30])
+        topo = (f'<p>Esta NCM faz parte da posição <a href="{prod["url"]}">SH4 {cod[:4]}: {esc(prod["curto"])}</a>, que reúne todas as NCMs que começam com {cod[:4]}.</p>'
+                if prod else "")
+        rel = f'<div class="card"><h2>NCMs da mesma posição</h2>{topo}' + (f'<ul class="plain">{itens}</ul>' if itens else "") + "</div>"
+    imposto = ('<div class="card"><h2>Impostos e classificação</h2><p class="small">As alíquotas de Imposto de Importação (II) e IPI desta NCM '
+               'estão na TEC (Tarifa Externa Comum) e na TIPI, publicadas pela Camex e pela Receita Federal. Antes de importar, confirme a '
+               'classificação fiscal com um despachante ou com a Receita: produtos parecidos podem cair em NCMs diferentes. '
+               'Esta página mostra só estatísticas de comércio exterior.</p></div>')
+    c = f"""<div class="card"><span class="eyebrow">NCM {fmt}{f' · SH4 {cod[:4]}' if prod else ''}</span><h1>NCM {fmt}: {esc(nome)}</h1>
+<p class="lede">{" ".join(frases)}</p></div>
+<div class="tiles">{tiles}</div>
+{bloco_13(V, ev, iv, E0_m, E_m, I0_m, I_m)}
+{preco_html}
+{"".join(secoes)}
+{serie_html}
+{rel}
+{imposto}"""
+    t = f"NCM {fmt}: {corta(nome, 44)} | Comex em Números"
+    partes = junta(f"exportou {us(E)}" if E else "", f"importou {us(I)}" if I else "")
+    desc = desc_corta(f"NCM {fmt}, {minusc(nome)}: o Brasil {partes} em 12 meses até {mes_curto(V.ref)}. "
+                      "Preço médio por kg, países de origem e destino, estados e série mensal para baixar.")
+    ld = {"@context": "https://schema.org", "@type": "Dataset", "name": f"Comércio exterior do Brasil: NCM {fmt} ({nome})",
+          "description": desc, "url": BASE + url, "inLanguage": "pt-BR", "temporalCoverage": f"{V.meses[0]}/{V.ref}",
+          "isAccessibleForFree": True, "license": LICENCA, "creator": {"@type": "Organization", "name": "Comex em Números", "url": BASE + "/"},
+          "isBasedOn": "https://comexstat.mdic.gov.br/"}
+    cont = [(ESTE, "/ncm/", "Todas as NCMs", "Busque pelo código ou pela descrição")]
+    if prod:
+        cont.append((ESTE, prod["url"], f"SH4 {cod[:4]}: {corta(prod['curto'], 40)}", "A posição completa: destinos, portos e série desde 2015"))
+    cont += [SETOR_EXTERNO, CAMBIO]
+    mig = [("/ncm/", "NCM")] + ([(prod["url"], f"SH4 {cod[:4]}")] if prod else []) + [(None, fmt)]
+    return pagina(B, url, t, desc, c, "/ncm/", ld, migalhas=mig, continuar=cont)
+
+
+def pg_ncm_indice(B) -> str:
+    regs = B.ncm_com_pagina()
+    linhas, cap_ant = [], None
+    for r in regs:
+        if r["cod"][:2] != cap_ant:
+            cap_ant = r["cod"][:2]
+            linhas.append(f'<tr><th colspan="3">Capítulo {cap_ant}</th></tr>')
+        e, i = sum(r["export"][-12:]), sum(r["import"][-12:])
+        linhas.append(f'<tr><td><a href="{r["url"]}">NCM {fmt_ncm(r["cod"])}</a><span class="s">{esc(corta(r["nome"], 80))}</span></td>'
+                      f'<td class="r">{us(e) if e else "—"}</td><td class="r">{us(i) if i else "—"}</td></tr>')
+    per = f"{mes_curto(B.ncm_meses[-12])} a {mes_curto(B.ref)}"
+    c = f"""<div class="card"><span class="eyebrow">NCM · 12 meses até {mes_curto(B.ref)}</span><h1>Comércio exterior por NCM</h1>
+<p class="lede">Importação, exportação, preço médio por kg, países e estados de {nf(len(regs), 0)} NCMs (8 dígitos), as de maior movimento nos últimos 12 meses ({per}). Busque pelo código, com ou sem pontos, ou pela descrição.</p>
+<div class="search"><label for="busca" class="small" style="align-self:center">Buscar</label><input id="busca" type="search" placeholder="Ex.: 0901.11.10, celular, fertilizante" autocomplete="off" data-indice="/assets/busca-ncm.json" data-rotulo="NCM"></div><div id="busca-res" aria-live="polite"></div></div>
+<div class="card"><div class="scroll"><table><thead><tr><th>NCM</th><th class="r">Exportação</th><th class="r">Importação</th></tr></thead><tbody>{"".join(linhas)}</tbody></table></div>
+<p class="src">Valores em US$ FOB nos últimos 12 meses. Só ganham página as NCMs com pelo menos {us(NCM_MIN)} em 12 meses, somando exportação e importação.</p></div>"""
+    desc = desc_corta(f"Importação e exportação por NCM: valores, preço médio por kg, países de origem e destino de {nf(len(regs), 0)} NCMs, "
+                      f"com dados do Comex Stat até {mes_curto(B.ref)}.")
+    cont = [(ESTE, "/produtos/", "Todos os produtos (SH4)", "A pauta completa, agrupada em posições de 4 dígitos"), SETOR_EXTERNO, CAMBIO]
+    return pagina(B, "/ncm/", "Importação e exportação por NCM: valor, preço e países | Comex em Números", desc, c, "/ncm/",
+                  migalhas=[(None, "NCM")], continuar=cont)
+
+
+def bloco_ncms_sh4(B, cod: str) -> str:
+    """Na página do produto (SH4): as NCMs dele que têm página."""
+    regs = B.ncm_com_pagina(cod)
+    if not regs:
+        return ""
+    linhas = []
+    for r in sorted(regs, key=lambda r: -r["t12"]):
+        e, i = sum(r["export"][-12:]), sum(r["import"][-12:])
+        linhas.append(f'<tr><td><a href="{r["url"]}">NCM {fmt_ncm(r["cod"])}</a><span class="s">{esc(corta(r["nome"], 80))}</span></td>'
+                      f'<td class="r">{us(e) if e else "—"}</td><td class="r">{us(i) if i else "—"}</td></tr>')
+    return ('<div class="card"><h2>NCMs desta posição</h2><p class="small">Os códigos de 8 dígitos dentro do SH4 '
+            f'{esc(cod)}, com exportação e importação nos últimos 12 meses. Toque em uma NCM para ver preço médio, países e estados.</p>'
+            '<div class="scroll"><table><thead><tr><th>NCM</th><th class="r">Exportação</th><th class="r">Importação</th></tr></thead>'
+            f'<tbody>{"".join(linhas)}</tbody></table></div></div>')
+
+
+def busca_ncm(B) -> str:
+    """Índice da busca da página /ncm/: [código, descrição, código com pontos, endereço]."""
+    return json.dumps([[r["cod"], r["nome"], fmt_ncm(r["cod"]), r["url"]] for r in sorted(B.ncm_com_pagina(), key=lambda r: -r["t12"])],
+                      ensure_ascii=False, separators=(",", ":"))
 
 
 def pg_lugar(B, tipo: str, it: dict) -> str:
@@ -2603,7 +2878,7 @@ def escreve(caminho: str, conteudo: str, urls=None):
         urls.append(caminho)
 
 
-LLMS_TXT = '# Comex em Números\n\n> Dados oficiais de comércio exterior do Brasil (Comex Stat, Secex/MDIC) organizados em páginas por produto, país, estado, município e porto. Valores em US$ FOB, atualizados todo mês.\n\nCada página traz o valor exportado ou importado, a variação contra o mesmo mês do ano anterior, rankings e série histórica, com botão para baixar os dados em CSV. Produtos seguem a classificação SH4. Dados de município são do domicílio fiscal da empresa, e dados de porto são da unidade da Receita Federal que despachou a carga.\n\n## Principais páginas\n- [Resumo do mês](__BASE__/resumo/): balança comercial, principais produtos e parceiros\n- [Exportação](__BASE__/exportacao/): o que o Brasil vende e para quem\n- [Importação](__BASE__/importacao/): o que o Brasil compra e de onde\n- [Produtos](__BASE__/produtos/): uma página por produto exportado ou importado\n- [Países](__BASE__/paises/): comércio com cada parceiro\n- [Estados](__BASE__/estados/): exportação e importação por UF\n- [Municípios](__BASE__/municipios/): municípios com pelo menos US$ 10 milhões em 12 meses\n- [Portos](__BASE__/portos/): portos, aeroportos e postos de fronteira\n- [Como funciona](__BASE__/sobre/): fonte, método e limitações\n\n## Fonte e atualização\n- Fonte: API do Comex Stat, Secex/MDIC.\n- Atualização automática no início de cada mês, quando o MDIC publica o mês anterior.\n\n## Como citar\n- Cite o nome do portal e o link da página usada. Os dados são públicos e os links levam à fonte oficial.\n- Cada página mostra o período dos dados. Informe o período ao usar um número.\n- O portal é independente e não tem ligação com governo, empresas ou instituições financeiras.\n\n## Família em Números\nPortais independentes de dados públicos do Brasil: Óleo em Números (https://oleoemnumeros.com.br), Comex em Números (https://comexemnumeros.com.br), Voo em Números (https://vooemnumeros.com.br), Economia em Números (https://economiaemnumeros.com.br) e Imóveis em Números (https://imoveisemnumeros.com.br).\n\n## Contato\n- Erros, sugestões e pedidos de dados: __BASE__/contato/\n'
+LLMS_TXT = '# Comex em Números\n\n> Dados oficiais de comércio exterior do Brasil (Comex Stat, Secex/MDIC) organizados em páginas por produto, país, estado, município e porto. Valores em US$ FOB, atualizados todo mês.\n\nCada página traz o valor exportado ou importado, a variação contra o mesmo mês do ano anterior, rankings e série histórica, com botão para baixar os dados em CSV. Produtos seguem a classificação SH4. Dados de município são do domicílio fiscal da empresa, e dados de porto são da unidade da Receita Federal que despachou a carga.\n\n## Principais páginas\n- [Resumo do mês](__BASE__/resumo/): balança comercial, principais produtos e parceiros\n- [Exportação](__BASE__/exportacao/): o que o Brasil vende e para quem\n- [Importação](__BASE__/importacao/): o que o Brasil compra e de onde\n- [Produtos](__BASE__/produtos/): uma página por produto exportado ou importado\n- [NCM](__BASE__/ncm/): importação e exportação por NCM de 8 dígitos, com preço médio por kg, países e estados\n- [Países](__BASE__/paises/): comércio com cada parceiro\n- [Estados](__BASE__/estados/): exportação e importação por UF\n- [Municípios](__BASE__/municipios/): municípios com pelo menos US$ 10 milhões em 12 meses\n- [Portos](__BASE__/portos/): portos, aeroportos e postos de fronteira\n- [Como funciona](__BASE__/sobre/): fonte, método e limitações\n\n## Fonte e atualização\n- Fonte: API do Comex Stat, Secex/MDIC.\n- Atualização automática no início de cada mês, quando o MDIC publica o mês anterior.\n\n## Como citar\n- Cite o nome do portal e o link da página usada. Os dados são públicos e os links levam à fonte oficial.\n- Cada página mostra o período dos dados. Informe o período ao usar um número.\n- O portal é independente e não tem ligação com governo, empresas ou instituições financeiras.\n\n## Família em Números\nPortais independentes de dados públicos do Brasil: Óleo em Números (https://oleoemnumeros.com.br), Comex em Números (https://comexemnumeros.com.br), Voo em Números (https://vooemnumeros.com.br), Economia em Números (https://economiaemnumeros.com.br) e Imóveis em Números (https://imoveisemnumeros.com.br).\n\n## Contato\n- Erros, sugestões e pedidos de dados: __BASE__/contato/\n'
 
 
 def main() -> None:
@@ -2612,7 +2887,7 @@ def main() -> None:
         return
     B = Base(json.loads(DADOS.read_text(encoding="utf-8")))
     B.par_url = {k: v for k, v in B.par_url.items() if ativo_prod(B.prod[k[0]])}
-    for pasta in ("produto", "pais", "estado", "porto", "municipio", "municipios", "exportacao", "importacao", "produtos", "paises", "estados", "portos", "sobre", "embed", "assets", "resumo", "planilhas"):
+    for pasta in ("produto", "ncm", "pais", "estado", "porto", "municipio", "municipios", "exportacao", "importacao", "produtos", "paises", "estados", "portos", "sobre", "embed", "assets", "resumo", "planilhas"):
         shutil.rmtree(SAIDA / pasta, ignore_errors=True)
     (SAIDA / "assets").mkdir(parents=True, exist_ok=True)
     shutil.copy(SITE / "estilo.css", SAIDA / "assets" / "estilo.css")
@@ -2676,6 +2951,10 @@ def main() -> None:
             novo = B.url_prod(cod) if cod in B.prod else ""
             if novo and novo != velho and not (SAIDA / velho.strip("/") / "index.html").exists():
                 escreve(velho, redirect(novo))
+    if B.ncm_com_pagina():
+        escreve("/ncm/", pg_ncm_indice(B), urls)
+        for r in B.ncm_com_pagina():
+            escreve(r["url"], pg_ncm(B, r), urls)
     for (cod, pais) in B.par_url:
         escreve(B.par_url[(cod, pais)], pg_par(B, cod, pais), urls)
     for it in B.uf.values():
@@ -2691,6 +2970,7 @@ def main() -> None:
     B.arq_urls.write_text(json.dumps(dict(sorted(B.urls.items())), ensure_ascii=False, indent=0), encoding="utf-8")
     (SAIDA / "assets" / "busca.json").write_text(json.dumps(busca, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
     (SAIDA / "assets" / "busca-geral.json").write_text(busca_geral(B), encoding="utf-8")
+    (SAIDA / "assets" / "busca-ncm.json").write_text(busca_ncm(B), encoding="utf-8")
     hoje = B.d["gerado_em"][:10]
     for u, txt in B.csv.items():
         (SAIDA / u.strip("/") / "dados.csv").write_text(txt, encoding="utf-8")
@@ -2706,7 +2986,7 @@ def main() -> None:
     (SAIDA / ".nojekyll").write_text("", encoding="utf-8")
     (SAIDA / "CNAME").write_text(DOMINIO + "\n", encoding="utf-8")
     (SAIDA / "dados.json").unlink(missing_ok=True)
-    print(f"Site gerado: {len(urls)} páginas no sitemap ({n_prod} produtos, {len(B.pais)} países, {len(B.uf)} estados, {len(B.porto)} portos, {len(B.par_url)} produto×país, {sum(1 for r in B.mun.values() if r["url"])} municípios).")
+    print(f"Site gerado: {len(urls)} páginas no sitemap ({n_prod} produtos, {len(B.pais)} países, {len(B.uf)} estados, {len(B.porto)} portos, {len(B.par_url)} produto×país, {len(B.ncm_com_pagina())} NCMs, {sum(1 for r in B.mun.values() if r["url"])} municípios).")
 
 
 if __name__ == "__main__":
