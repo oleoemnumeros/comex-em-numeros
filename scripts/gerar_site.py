@@ -1928,7 +1928,8 @@ def pg_lugar(B, tipo: str, it: dict) -> str:
         cz_e = B.cruz("produto_pais", "export", filtro_nome=nome)
         cz_i = B.cruz("produto_pais", "import", filtro_nome=nome)
         h_e, h_i = f"O que o Brasil vende {esc(para)}", f"O que o Brasil compra {esc(de_p)}"
-        t = f"Quanto o Brasil exporta {para} em {B.ref[:4]} e o que compra"
+        # as buscas que chegam são "o que o Brasil exporta para a Argentina" (Search Console, nov/2026): o título começa por aí
+        t = f"O que o Brasil exporta {para} em {B.ref[:4]} e o que compra"
         if len(t) > 72:
             t = f"Comércio Brasil–{nome} em {B.ref[:4]}: exportações e importações"
         desc = desc_corta(f"Em {mes_curto(B.ref)}, o Brasil "
