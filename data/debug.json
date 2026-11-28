@@ -1,14 +1,4 @@
 {
  "consultas": [],
- "dates_updated": {
-  "data": {
-   "updated": "2026-11-06",
-   "year": "2026",
-   "monthNumber": "10"
-  },
-  "success": true,
-  "message": null,
-  "processo_info": null,
-  "language": "pt"
- }
+ "erro_fatal": "POST /general falhou após 6 tentativas: HTTP 500: {\"error\":{\"code\":500,\"message\":\"An exception occurred in driver: SQLSTATE[08006] [7] FATAL:  password authentication failed for user \\u0022usr_comexstat\\u0022\"}}"
 }
